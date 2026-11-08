@@ -12,15 +12,16 @@ export const BASE = process.env.LG_TEST_BASE
 if (!BASE) throw new Error('Set LG_TEST_BASE to a throwaway folder (node fetch.mjs fills its jars/)')
 export const JARS = path.join(BASE, 'jars')
 export const PORT = 25611
-// The owner accepts the Minecraft EULA, not this harness: point this at a folder where it's already accepted.
-const EULA_FROM = process.env.LG_TEST_EULA_FROM
 const ROOT = new URL('../', import.meta.url).pathname
 const LIBS = path.join(ROOT, 'build/libs/')
 const built = existsSync(LIBS) ? readdirSync(LIBS).filter(f => /^LanternGraves-[\d.]+\.jar$/.test(f)) : []
 if (built.length !== 1) throw new Error(`Run ./gradlew build first: expected one LanternGraves jar in build/libs, found ${built.length}`)
 export const JAR = path.join(LIBS, built[0])
-export const VERSION = process.env.LG_TEST_VERSION ?? '1.21.11'
-export const JAVA = process.env.LG_TEST_JAVA ?? 'java'
+// Paper 26.1.2, 26.2 or 26.3. The bots speak 1.21.11, the newest mineflayer knows, and reach 26.x
+// through ViaVersion and ViaBackwards, which every test server gets.
+export const VERSION = process.env.LG_TEST_VERSION ?? '26.3'
+export const JAVA = process.env.LG_TEST_JAVA ?? '/Library/Java/JavaVirtualMachines/openjdk-25.jdk/Contents/Home/bin/java'
+const VIA = ['ViaVersion-5.12.2.jar', 'ViaBackwards-5.12.2.jar']
 
 export const sleep = ms => new Promise(r => setTimeout(r, ms))
 
@@ -32,15 +33,17 @@ export function newServer(name, { plugins = [], props = {}, version = VERSION } 
   copyFileSync(path.join(JARS, `paper-${version}.jar`), path.join(dir, 'paper.jar'))
   const warm = path.join(BASE, 'warm', version)
   for (const f of ['libraries', 'versions', 'cache']) if (existsSync(path.join(warm, f))) execSync(`cp -cR "${path.join(warm, f)}" "${path.join(dir, f)}"`)
-  for (const p of [JAR, ...plugins]) copyFileSync(p, path.join(dir, 'plugins', path.basename(p)))
-  if (!EULA_FROM || !/^eula=true$/m.test(readFileSync(path.join(EULA_FROM, 'eula.txt'), 'utf8'))) {
+  for (const p of [JAR, ...VIA.map(v => path.join(JARS, v)), ...plugins]) copyFileSync(p, path.join(dir, 'plugins', path.basename(p)))
+  // The EULA answer is the owner's: copy it from a folder where they've already accepted it.
+  const eulaFrom = process.env.LG_TEST_EULA_FROM
+  if (!eulaFrom || !/^eula=true$/m.test(readFileSync(path.join(eulaFrom, 'eula.txt'), 'utf8'))) {
     throw new Error('Set LG_TEST_EULA_FROM to a folder whose eula.txt the owner has already accepted')
   }
-  copyFileSync(path.join(EULA_FROM, 'eula.txt'), path.join(dir, 'eula.txt'))
+  copyFileSync(path.join(eulaFrom, 'eula.txt'), path.join(dir, 'eula.txt'))
   const all = {
     'server-ip': '127.0.0.1', 'server-port': PORT, 'online-mode': false, 'level-type': 'minecraft\\:flat',
-    'spawn-protection': 0, 'enable-query': false, 'enable-rcon': false, difficulty: 'easy', 'spawn-monsters': false,
-    'view-distance': 6, 'simulation-distance': 6, 'generate-structures': false, ...props,
+    'spawn-protection': 0, 'enable-query': false, 'enable-rcon': false, 
+    'view-distance': 6, 'simulation-distance': 6, 'generate-structures': false, 'white-list': false, difficulty: 'peaceful', 'enforce-whitelist': false, ...props,
   }
   writeFileSync(path.join(dir, 'server.properties'), Object.entries(all).map(([k, v]) => `${k}=${v}`).join('\n') + '\n')
   return dir
@@ -92,13 +95,13 @@ export class Server {
     const from = this.log.length
     this.send(cmd)
     await sleep(ms)
-    return this.log.slice(from).map(l => l.replace(/^\[[\d:]+ \w+\]: /, ''))
+    return this.log.slice(from).map(l => l.replace(/^\[[\d:]+ \w+\]: /, '').replace(/^\[[^\]]+\] ?/, '').replace(/^System chat: /, ''))
   }
   async run(...cmds) { for (const c of cmds) { this.send(c) ; await sleep(80) } await sleep(300) }
   async count(selector) {
     const out = await this.ask(`execute if entity ${selector}`, 400)
     const hit = out.find(l => /Test passed|Test failed/.test(l))
-    const m = hit && hit.match(/count: (\d+)/)
+    const m = hit && hit.match(/count: (\d+)/i)
     return m ? Number(m[1]) : 0
   }
   /** One piece of an entity's data, as a JS value, or undefined if it has none. */
@@ -120,8 +123,18 @@ export class Server {
 
 // ---------------------------------------------------------------- bots
 
+/**
+ * physics: on Paper 26.3 behind ViaVersion 5.12.2 a 1.21.11 bot is kicked for "Invalid move player packet"
+ * once it moves on its own (seen in ReturnGate and WildernessRegen too). So there the bots don't move
+ * themselves: their movement packets are dropped and the console teleports them. On 26.1.2 and 26.2 they walk.
+ */
+export const WALKS = VERSION !== '26.3'
 export async function bot(username, { port = PORT } = {}) {
-  const b = mineflayer.createBot({ host: '127.0.0.1', port, username, version: '1.21.11', auth: 'offline', viewDistance: 'tiny' })
+  const b = mineflayer.createBot({ host: '127.0.0.1', port, username, version: '1.21.11', auth: 'offline', viewDistance: 'tiny', physicsEnabled: WALKS })
+  if (!WALKS) {
+    const write = b._client.write.bind(b._client)
+    b._client.write = (name, data) => (/^(position|position_look|look|flying)$/.test(name) ? undefined : write(name, data))
+  }
   b.chat_log = []
   b.on('messagestr', m => b.chat_log.push(m))
   b.on('error', e => console.log(`  [${username}] error: ${e.message}`))
@@ -140,7 +153,7 @@ export async function respawned(b, ms = 10000) {
   const end = Date.now() + ms
   await sleep(300)
   while (Date.now() < end) {
-    if (b.health > 0 && b.entity) return true
+    if (b.health > 0 && b.entity) { if (!WALKS) b.physicsEnabled = false; return true }
     await sleep(100)
   }
   return false
@@ -153,7 +166,9 @@ export async function rightClickGrave(b, near) {
   const boxes = markers(b, 'interaction').filter(e => !near || e.position.distanceTo(near) < 3)
   boxes.sort((x, y) => x.position.distanceTo(b.entity.position) - y.position.distanceTo(b.entity.position))
   if (!boxes.length) return false
-  await b.lookAt(boxes[0].position.offset(0, 0.5, 0), true)
+  if (WALKS) await b.lookAt(boxes[0].position.offset(0, 0.5, 0), true)
+  // A real client sends both: "interact at" a point on the entity, then "interact".
+  b.activateEntityAt(boxes[0], boxes[0].position.offset(0, 0.5, 0))
   b.activateEntity(boxes[0])
   await sleep(600)
   return true

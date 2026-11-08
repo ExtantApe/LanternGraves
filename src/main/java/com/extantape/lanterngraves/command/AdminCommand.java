@@ -9,9 +9,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
-import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
 
 import java.util.List;
@@ -21,7 +19,7 @@ import static com.extantape.lanterngraves.grave.GraveService.tell;
 import static com.extantape.lanterngraves.grave.GraveService.where;
 
 /** /lanterngraves for admins. Nothing here opens or empties a grave. */
-public final class AdminCommand implements TabExecutor {
+public final class AdminCommand {
     private final LanternGravesPlugin plugin;
     private final GraveService graves;
 
@@ -30,8 +28,8 @@ public final class AdminCommand implements TabExecutor {
         this.graves = graves;
     }
 
-    @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+    /** Runs a subcommand from its words, as typed after the command name. */
+    public boolean handle(CommandSender sender, String label, String[] args) {
         String sub = args.length == 0 ? "help" : args[0].toLowerCase(Locale.ROOT);
         switch (sub) {
             case "list" -> list(sender, args);
@@ -120,8 +118,8 @@ public final class AdminCommand implements TabExecutor {
         }
     }
 
-    @Override
-    public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
+    /** Suggestions for the word being typed, given the words so far. */
+    public List<String> complete(CommandSender sender, String[] args) {
         if (args.length == 1) {
             return List.of("list", "tp", "move", "damaged", "reload").stream().filter(x -> x.startsWith(args[0].toLowerCase(Locale.ROOT))).toList();
         }

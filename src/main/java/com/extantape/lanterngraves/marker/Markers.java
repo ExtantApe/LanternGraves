@@ -107,8 +107,15 @@ public final class Markers {
         light(g, w);
     }
 
-    private Location base(Grave g, World w) {
-        return new Location(w, g.x(), g.y(), g.z());
+    /**
+     * Where the lantern shows: the grave's own block, or if something solid now fills it (sand fell,
+     * someone built there), the first open block above, so it can still be seen and clicked.
+     */
+    public Location base(Grave g, World w) {
+        int y = g.blockY();
+        if (!w.isChunkLoaded(g.blockX() >> 4, g.blockZ() >> 4)) return new Location(w, g.x(), g.y(), g.z());
+        for (int i = 0; i < 8 && y < w.getMaxHeight() - 1 && w.getBlockAt(g.blockX(), y, g.blockZ()).getType().isOccluding(); i++) y++;
+        return new Location(w, g.x(), g.y() + (y - g.blockY()), g.z());
     }
 
     private Parts create(Grave g, World w) {

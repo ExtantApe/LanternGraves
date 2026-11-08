@@ -2,6 +2,8 @@ package com.extantape.lanterngraves;
 
 import com.extantape.lanterngraves.command.AdminCommand;
 import com.extantape.lanterngraves.command.GraveCommand;
+import com.extantape.lanterngraves.command.Registration;
+import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import com.extantape.lanterngraves.grave.GraveService;
 import com.extantape.lanterngraves.grave.SafeGround;
 import com.extantape.lanterngraves.groups.InventoryGroups;
@@ -68,11 +70,13 @@ public final class LanternGravesPlugin extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(new GraveListener(graves, markers, safeGround), this);
         getServer().getPluginManager().registerEvents(this, this);
         GraveCommand grave = new GraveCommand(graves);
-        getCommand("grave").setExecutor(grave);
-        getCommand("grave").setTabCompleter(grave);
         AdminCommand admin = new AdminCommand(this, graves);
-        getCommand("lanterngraves").setExecutor(admin);
-        getCommand("lanterngraves").setTabCompleter(admin);
+        getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
+            event.registrar().register(Registration.tree("grave", "lanterngraves.use", grave::handle, grave::complete,
+                    List.of("list", "collect", "trust", "untrust"), 3), "List, collect and share your graves", List.of("graves"));
+            event.registrar().register(Registration.tree("lanterngraves", "lanterngraves.admin", admin::handle, admin::complete,
+                    List.of("list", "tp", "move", "damaged", "reload"), 2), "Lantern Graves admin commands");
+        });
 
         // Players already online (a plugin reload): their live data is current, so settle against it.
         for (Player p : Bukkit.getOnlinePlayers()) {
@@ -82,6 +86,9 @@ public final class LanternGravesPlugin extends JavaPlugin implements Listener {
         Bukkit.getScheduler().runTaskTimer(this, () -> {
             graves.retryUnsaved();
             markers.tick();
+            // Footing is also sampled here, not only on movement: a player who was teleported, pushed or
+            // is standing still still has safe ground on record.
+            for (Player p : Bukkit.getOnlinePlayers()) if (!p.isDead()) safeGround.observe(p);
         }, 20L, 20L);
         getLogger().info("Loaded " + loaded.graves().size() + " grave" + (loaded.graves().size() == 1 ? "" : "s") + ".");
     }

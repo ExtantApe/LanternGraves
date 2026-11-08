@@ -1,6 +1,6 @@
 // Basic: die, walk back, collect. Everything comes back exactly, in the same slots, with all the XP.
 // Then a full inventory: what doesn't fit stays in the grave and nothing drops.
-import { Server, newServer, bot, sleep, check, summary, holdings, graveFiles, holdingsTally, graveTally, addTallies, sameTally, rightClickGrave, markers, respawned } from './harness.mjs'
+import { Server, newServer, bot, sleep, check, summary, holdings, graveFiles, holdingsTally, graveTally, addTallies, sameTally, rightClickGrave, markers, respawned, WALKS } from './harness.mjs'
 
 export const KIT = [
   'clear {p}',
@@ -40,8 +40,8 @@ export async function loose(s) {
 
 /** No mobs to interfere with the counts: no spawning, day, and anything hostile removed. */
 export async function calm(s) {
-  await s.run('gamerule keepInventory false', 'gamerule doImmediateRespawn true', 'gamerule doMobSpawning false',
-    'gamerule doDaylightCycle false', 'gamerule doWeatherCycle false', 'time set noon', 'kill @e[type=!player]')
+  await s.run('gamerule keep_inventory false', 'gamerule immediate_respawn true', 'gamerule spawn_mobs false', 'gamerule spawn_monsters false',
+    'gamerule advance_time false', 'gamerule advance_weather false', 'time set noon', 'kill @e[type=!player]')
 }
 
 export async function run(s) {
@@ -73,11 +73,16 @@ export async function run(s) {
   await s.run('tp Alder 26.5 -60 20.5')
   await sleep(1500)
   check('the lantern is there', markers(a, 'block_display').some(e => e.position.distanceTo(a.entity.position.offset(-6, 0, 0)) < 1.5), markers(a, 'block_display').length + ' displays seen')
-  a.setControlState('forward', true)
-  await a.lookAt(a.entity.position.offset(-6, 1.6, 0), true)
-  await sleep(1200)
-  a.setControlState('forward', false)
-  await sleep(300)
+  if (WALKS) {
+    a.setControlState('forward', true)
+    await a.lookAt(a.entity.position.offset(-6, 1.6, 0), true)
+    await sleep(1200)
+    a.setControlState('forward', false)
+    await sleep(300)
+  } else {
+    await s.run('tp Alder 22.5 -60 20.5') // 26.3: bots can't walk behind ViaVersion, so they're carried the last steps
+    await sleep(800)
+  }
   await rightClickGrave(a)
   await sleep(800)
   const after = await holdings(s, 'Alder')

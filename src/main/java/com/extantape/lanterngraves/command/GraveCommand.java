@@ -8,9 +8,7 @@ import com.extantape.lanterngraves.grave.Xp;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
-import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
@@ -24,15 +22,15 @@ import static com.extantape.lanterngraves.grave.GraveService.where;
 /**
  * /grave for players: list your graves, collect one nearby, and give or take a friend's access.
  */
-public final class GraveCommand implements TabExecutor {
+public final class GraveCommand {
     private final GraveService graves;
 
     public GraveCommand(GraveService graves) {
         this.graves = graves;
     }
 
-    @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+    /** Runs a subcommand from its words, as typed after the command name. */
+    public boolean handle(CommandSender sender, String label, String[] args) {
         if (!(sender instanceof Player p)) {
             tell(sender, "Only players have graves. Admins: /lanterngraves list <player>.", NamedTextColor.RED);
             return true;
@@ -95,7 +93,7 @@ public final class GraveCommand implements TabExecutor {
             graves.collect(p, pick);
             return;
         }
-        near.sort((a, b) -> Double.compare(distanceSq(p, a), distanceSq(p, b)));
+        near.sort(java.util.Comparator.comparingDouble(g -> distanceSq(p, g)));
         Grave pick = near.stream().filter(g -> g.mayOpen(p.getUniqueId(), now)).findFirst().orElse(null);
         if (pick == null) {
             if (!near.isEmpty()) graves.collect(p, near.getFirst()); // explains whose it is
@@ -105,9 +103,12 @@ public final class GraveCommand implements TabExecutor {
         graves.collect(p, pick);
     }
 
-    private static double distanceSq(Player p, Grave g) {
-        double dx = p.getLocation().getX() - g.x(), dy = p.getLocation().getY() - g.y(), dz = p.getLocation().getZ() - g.z();
-        return dx * dx + dy * dy + dz * dz;
+    /** Distance to the grave or to its lantern, whichever is nearer (the lantern rises if its spot fills in). */
+    private double distanceSq(Player p, Grave g) {
+        double dx = p.getLocation().getX() - g.x(), dz = p.getLocation().getZ() - g.z();
+        double dy = p.getLocation().getY() - g.y();
+        double dy2 = p.getLocation().getY() - graves.markerY(g);
+        return dx * dx + dz * dz + Math.min(dy * dy, dy2 * dy2);
     }
 
     private void trust(Player p, String[] args) {
@@ -182,8 +183,8 @@ public final class GraveCommand implements TabExecutor {
         return p;
     }
 
-    @Override
-    public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
+    /** Suggestions for the word being typed, given the words so far. */
+    public List<String> complete(CommandSender sender, String[] args) {
         if (!(sender instanceof Player p)) return List.of();
         int count = graves.of(p.getUniqueId()).size();
         List<String> numbers = IntStream.rangeClosed(1, count).mapToObj(Integer::toString).toList();

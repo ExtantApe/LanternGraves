@@ -82,6 +82,12 @@ public final class GraveService {
                 .sorted(Comparator.comparingLong(Grave::created).thenComparing(Grave::id)).toList();
     }
 
+    /** The height the lantern shows at right now. */
+    public double markerY(Grave g) {
+        World w = Bukkit.getWorld(g.world());
+        return w == null ? g.y() : markers.base(g, w).getY();
+    }
+
     public int numberOf(Grave g) {
         return of(g.owner()).indexOf(g) + 1;
     }

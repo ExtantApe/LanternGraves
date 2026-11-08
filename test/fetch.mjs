@@ -11,7 +11,8 @@ const JARS = path.join(BASE, 'jars')
 mkdirSync(JARS, { recursive: true })
 
 export const FILES = {
-  'paper-1.21.11.jar': 'https://fill-data.papermc.io/v1/objects/5ffef465eeeb5f2a3c23a24419d97c51afd7dbb4923ff42df9a3f58bba1ccfba/paper-1.21.11-132.jar',
+  'paper-26.1.2.jar': 'https://fill-data.papermc.io/v1/objects/1d70b1dab9cf4a6de615209a536f3a45a2186240253c428213ce2188ab95e5f7/paper-26.1.2-74.jar',
+  'paper-26.2.jar': 'https://fill-data.papermc.io/v1/objects/ef3dbc68b013deafdbbee3bebf1ba351671ebcda94a8f136809b7532d5ba2fe1/paper-26.2-135.jar',
   'paper-26.3.jar': 'https://fill-data.papermc.io/v1/objects/9601f9a26a2a52a0f2c807cf1abf691f96ee4fb287878313b601cebc2c51eabf/paper-26.3-244.jar',
   'multiverse-core-5.8.2.jar': 'https://cdn.modrinth.com/data/3wmN97b8/versions/de7TbcZG/multiverse-core-5.8.2.jar',
   'multiverse-inventories-5.3.6.jar': 'https://cdn.modrinth.com/data/qvdtDX3s/versions/86s1EwyC/multiverse-inventories-5.3.6.jar',
@@ -20,11 +21,30 @@ export const FILES = {
   'worldedit-bukkit-7.4.6.jar': 'https://cdn.modrinth.com/data/1u6JkXh5/versions/YFnqiUlL/worldedit-bukkit-7.4.6.jar',
 }
 
+// Paper publishes a SHA-256 for every build; each Paper jar is checked against it.
+async function paperSha(version, build) {
+  const r = await fetch(`https://fill.papermc.io/v3/projects/paper/versions/${version}/builds/${build}`, { headers: { 'User-Agent': 'LanternGraves-tests' } })
+  return (await r.json()).downloads['server:default'].checksums.sha256
+}
+
 for (const [name, url] of Object.entries(FILES)) {
   const to = path.join(JARS, name)
-  if (existsSync(to)) continue
+  const paper = url.match(/paper-([\d.]+)-(\d+)\.jar$/)
+  if (existsSync(to)) {
+    if (paper) await verify(to, await paperSha(paper[1], paper[2]))
+    continue
+  }
   const res = await fetch(url, { headers: { 'User-Agent': 'LanternGraves-tests' } })
   if (!res.ok) throw new Error(`${name}: HTTP ${res.status}`)
   await pipeline(Readable.fromWeb(res.body), createWriteStream(to))
+  if (paper) await verify(to, await paperSha(paper[1], paper[2]))
   console.log('fetched ' + name)
+}
+
+async function verify(file, want) {
+  const { createHash } = await import('node:crypto')
+  const { readFileSync, rmSync } = await import('node:fs')
+  const got = createHash('sha256').update(readFileSync(file)).digest('hex')
+  if (got !== want) { rmSync(file); throw new Error(`${path.basename(file)}: checksum ${got} isn't Paper's ${want}; deleted`) }
+  console.log(`${path.basename(file)}: matches Paper's SHA-256`)
 }

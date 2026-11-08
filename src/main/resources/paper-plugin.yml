@@ -1,20 +1,16 @@
 name: LanternGraves
 version: '${version}'
 main: com.extantape.lanterngraves.LanternGravesPlugin
-api-version: '1.21.11'
+api-version: '26.1'
 description: Keeps a player's items and XP safe in a grave marked by a lantern, locked to them, until they collect it.
 website: https://github.com/ExtantApe/LanternGraves
-softdepend: [Multiverse-Inventories]
-commands:
-  grave:
-    description: List, collect and share your graves.
-    usage: /grave [list|collect|trust|untrust]
-    aliases: [graves]
-    permission: lanterngraves.use
-  lanterngraves:
-    description: Lantern Graves admin commands.
-    usage: /lanterngraves [list|tp|move|damaged|reload]
-    permission: lanterngraves.admin
+dependencies:
+  server:
+    # Optional. Loaded first when present, and on our classpath so graves can read its groups.
+    Multiverse-Inventories:
+      load: BEFORE
+      required: false
+      join-classpath: true
 permissions:
   lanterngraves.use:
     description: Use /grave. Graves are made on death and collected by right-click whatever this is set to.

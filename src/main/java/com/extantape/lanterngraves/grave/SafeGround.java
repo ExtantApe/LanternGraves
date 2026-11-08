@@ -19,8 +19,10 @@ public final class SafeGround {
     private final Map<UUID, Map<String, Location>> last = new HashMap<>();
 
     public void observe(Player p) {
-        if (!p.isOnGround() || p.isFlying() || p.isInsideVehicle()) return;
+        // Judged from the server's own view of the player, not the client's on-ground flag.
+        if (p.isFlying() || p.isGliding() || p.isInsideVehicle() || p.isSwimming()) return;
         Location at = p.getLocation();
+        if (at.getY() - Math.floor(at.getY()) > 0.01 || Math.abs(p.getVelocity().getY()) > 0.1) return;
         Block feet = at.getBlock();
         Block below = feet.getRelative(0, -1, 0);
         Block head = feet.getRelative(0, 1, 0);
