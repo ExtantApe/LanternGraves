@@ -1,0 +1,1 @@
+{"name": "lanterngraves-tests", "private": true, "type": "module", "dependencies": {"mineflayer": "^4.39.0", "prismarine-nbt": "^2.7.0"}}

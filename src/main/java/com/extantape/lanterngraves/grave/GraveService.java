@@ -307,7 +307,7 @@ public final class GraveService {
         }
         // 2. Move it, and save the player with the transaction id alongside.
         for (Map.Entry<Integer, ItemStack> it : give.entrySet()) inv.setItem(plan.get(it.getKey()), it.getValue());
-        if (xp > 0) c.giveExp(xp);
+        if (xp > 0) addXp(c, xp);
         txns.add(c, txn);
         try {
             c.saveData();
@@ -337,6 +337,15 @@ public final class GraveService {
             plugin.getLogger().info(c.getName() + " collected " + got + " from " + g.ownerName() + "'s grave " + g.id());
         }
         return true;
+    }
+
+    /** Adds points by setting level and bar directly; giveExp adds them in floats and can lose one. */
+    private static void addXp(Player c, int points) {
+        long total = Math.min(Integer.MAX_VALUE, (long) Xp.total(c.getLevel(), c.getExp()) + points);
+        int level = Xp.levelFor((int) total);
+        c.setLevel(level);
+        c.setExp(Xp.progress(level, (int) total - Xp.toReach(level)));
+        c.setTotalExperience((int) Math.min(Integer.MAX_VALUE, (long) c.getTotalExperience() + points));
     }
 
     // ---------------------------------------------------------------- crash recovery

@@ -21,6 +21,13 @@ class HelpersTest {
         assertEquals(2920, Xp.toReach(40));
         assertEquals(30970, Xp.toReach(100));
         assertEquals(Xp.toReach(30) + 56, Xp.total(30, 0.5f));
+        assertEquals(Xp.toReach(33) + 20, Xp.total(33, 20f / 139 - 1e-7f), "float error just under a point still counts it");
+        for (int l = 0; l < 120; l++) {
+            for (int p = 0; p < Xp.barSize(l); p += 1 + Xp.barSize(l) / 13) {
+                assertEquals(Xp.toReach(l) + p, Xp.total(l, Xp.progress(l, p)), "level " + l + " + " + p);
+                assertEquals(p, (int) Math.floor(Xp.progress(l, p) * Xp.barSize(l)), "vanilla reads back " + p);
+            }
+        }
         for (int l = 0; l < 200; l++) {
             assertEquals(Xp.toReach(l + 1) - Xp.toReach(l), Xp.barSize(l), "bar at " + l);
             assertEquals(l, Xp.levelFor(Xp.toReach(l)));
