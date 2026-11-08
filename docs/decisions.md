@@ -20,3 +20,6 @@ What the owner decided, and when. Don't reopen these without asking.
 - **Versions:** Minecraft 26.1 and up only, on Java 25, tested on 26.1.2, 26.2 and 26.3. No 1.21.x.
 - **Paper only:** `paper-api` and `paper-plugin.yml`.
 - **Kids first:** graves never let other players take a child's items. Only the owner can open a grave unless they grant access, and `lanterngraves.share` can be denied for a group so its members can't grant access at all.
+- **Releases:** 0.x versions on GitHub Releases as soon as they're good. Modrinth, Hangar and Spigot wait for the owner's own code review.
+- **Public:** the repo goes public with v0.1.0, after the pre-public audit and with the leak check in CI.
+- **Sharing:** `lanterngraves.share` stays allowed for everyone, children included, so a child can let a parent or friend collect a grave they can't reach. Nobody can open another player's grave without the owner's `/grave trust`.
