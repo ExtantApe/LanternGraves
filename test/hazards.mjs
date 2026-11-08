@@ -14,18 +14,19 @@ async function ownedGraves(s, owner) { return graveFiles(s).filter(g => g.owner 
  * same position and cause the plugin sees, and the test says so.
  */
 async function voidDeath(s, name) {
-  const g = await deathGrave(s, name, 8000)
+  const old = new Set(graveFiles(s).map(g => g.file))
+  const g = await deathGrave(s, name, 8000, old)
   if (g) return g
   console.log(`  ${name} wasn't ticked below the world: killing them there with out_of_world damage`)
   await s.run(`damage ${name} 1000 minecraft:out_of_world`)
-  return deathGrave(s, name)
+  return deathGrave(s, name, 25000, old)
 }
 
 /** Waits until the owner has a settled grave (deaths by lava or the void take a few seconds). */
-async function deathGrave(s, owner, ms = 25000) {
+async function deathGrave(s, owner, ms = 25000, old = new Set()) {
   const end = Date.now() + ms
   while (Date.now() < end) {
-    const g = graveFiles(s).filter(g => g.owner === owner && !g.pending)
+    const g = graveFiles(s).filter(g => g.owner === owner && !g.pending && !old.has(g.file))
     if (g.length) { await sleep(500); return g[0] }
     await sleep(250)
   }
@@ -107,8 +108,8 @@ export async function run(s) {
     const px = 300, pz = 300
     await s.run(`execute in minecraft:${dim} run forceload add ${px - 16} ${pz - 16} ${px + 16} ${pz + 16}`)
     if (dim !== 'overworld') {
-      await s.run(`execute in minecraft:${dim} run fill ${px - 3} ${floor - 1} ${pz - 3} ${px + 6} ${floor - 1} ${pz + 3} obsidian`,
-        `execute in minecraft:${dim} run fill ${px - 3} ${floor} ${pz - 3} ${px + 6} ${floor + 3} ${pz + 3} air`)
+      // A closed obsidian room, so lava from the terrain around it can't flow in.
+      await s.run(`execute in minecraft:${dim} run fill ${px - 4} ${floor - 1} ${pz - 4} ${px + 7} ${floor + 4} ${pz + 4} obsidian hollow`)
     }
     await standAndWalk(s, a, 'Alder', dim, px, floor, pz)
     await kit(s, 'Alder')
@@ -184,8 +185,9 @@ export async function run(s) {
   check('respawn anchor at the grave: items and lock intact', await graveUnchanged(s, ge))
   check('respawn anchor at the grave: the lantern comes back', (await lanternBack(s, ge, 'overworld')).ok)
 
-  // Bed: a grave in the Nether, a bed beside it.
-  await s.run('execute in minecraft:the_nether run forceload add 480 480 520 520',
+  // Bed: a grave in the Nether, a bed beside it. Peaceful again, and no Nether mobs, so a stray drop can't reach Birch.
+  await s.run('difficulty peaceful', 'execute in minecraft:the_nether run gamerule spawn_mobs false', 'execute in minecraft:the_nether run gamerule spawn_monsters false',
+    'execute in minecraft:the_nether run forceload add 480 480 520 520',
     'execute in minecraft:the_nether run fill 495 99 495 505 99 505 obsidian', 'execute in minecraft:the_nether run fill 495 100 495 505 104 505 air')
   await standAndWalk(s, b, 'Birch', 'the_nether', 498, 100, 500)
   await kit(s, 'Birch')
@@ -203,7 +205,8 @@ export async function run(s) {
   await sleep(2000)
   check('bed in the Nether at the grave: items and lock intact', gb && await graveUnchanged(s, gb) && sameTally(kitN, graveTally([gb])).ok)
   check('bed in the Nether at the grave: the lantern comes back', gb && (await lanternBack(s, gb, 'the_nether')).ok)
-  await s.run(`execute in minecraft:the_nether run tp Birch ${gb.pos[0] - 1.5} ${gb.pos[1]} ${gb.pos[2]}`)
+  await s.run('execute in minecraft:the_nether run kill @e[type=item,x=500,y=100,z=500,distance=..40]',
+    `execute in minecraft:the_nether run tp Birch ${gb.pos[0] - 1.5} ${gb.pos[1]} ${gb.pos[2]}`)
   await sleep(3800)
   await rightClickGrave(b)
   await sleep(600)

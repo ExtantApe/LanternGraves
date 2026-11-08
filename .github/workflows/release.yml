@@ -12,6 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Leak check
+        run: bash scripts/leak-check.sh
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -28,4 +30,10 @@ jobs:
       - name: Release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" build/libs/LanternGraves-*.jar --title "$GITHUB_REF_NAME" --generate-notes
+        run: |
+          cd build/libs
+          sha256sum LanternGraves-*.jar | tee LanternGraves.sha256
+          cd ../..
+          notes="docs/release-notes/$GITHUB_REF_NAME.md"
+          if [ -f "$notes" ]; then how=(--notes-file "$notes"); else how=(--generate-notes); fi
+          gh release create "$GITHUB_REF_NAME" build/libs/LanternGraves-*.jar build/libs/LanternGraves.sha256 --title "Lantern Graves ${GITHUB_REF_NAME#v}" "${how[@]}"
