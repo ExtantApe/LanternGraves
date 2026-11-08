@@ -1,0 +1,5 @@
+name: LanternGravesTestHook
+version: '1'
+main: com.extantape.lanterngraves.testhook.DieOnQuit
+api-version: '26.1'
+description: Test servers only. Kills a player tagged die_on_quit as they log out.

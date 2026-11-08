@@ -85,4 +85,14 @@ class HelpersTest {
         assertTrue(brief.activeAt(999));
         assertFalse(brief.activeAt(1000));
     }
+
+    @Test
+    void compassWords() {
+        assertEquals("north", Compass.direction(0, -10));
+        assertEquals("south", Compass.direction(0, 10));
+        assertEquals("east", Compass.direction(10, 0));
+        assertEquals("west", Compass.direction(-10, 0));
+        assertEquals("northeast", Compass.direction(10, -10));
+        assertEquals("southwest", Compass.direction(-10, 10));
+    }
 }

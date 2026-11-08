@@ -67,7 +67,8 @@ public final class GraveCommand {
                 line.append(", ").append(Durations.describe(now - g.created())).append(" ago");
                 List<String> friends = g.grants().values().stream().filter(gr -> gr.activeAt(now)).map(Grant::name).toList();
                 if (!friends.isEmpty()) line.append("  friends: ").append(String.join(", ", friends));
-                tell(p, line.toString(), NamedTextColor.YELLOW);
+                p.sendMessage(net.kyori.adventure.text.Component.text(line.toString(), NamedTextColor.YELLOW)
+                        .hoverEvent(net.kyori.adventure.text.event.HoverEvent.showText(contents(g))));
             }
         }
         List<Grave> shared = graves.all().stream()
@@ -75,6 +76,24 @@ public final class GraveCommand {
         for (Grave g : shared) {
             tell(p, "You can collect " + g.ownerName() + "'s grave #" + graves.numberOf(g) + " at " + where(g) + ".", NamedTextColor.AQUA);
         }
+    }
+
+    /** What's in a grave, grouped by item, for the hover text in /grave list. */
+    private static net.kyori.adventure.text.Component contents(Grave g) {
+        java.util.Map<String, Integer> byType = new java.util.TreeMap<>();
+        g.items().values().forEach(i -> byType.merge(i.type(), i.amount(), Integer::sum));
+        var text = net.kyori.adventure.text.Component.text().append(net.kyori.adventure.text.Component.text("In this grave:", NamedTextColor.GOLD));
+        int shown = 0;
+        for (var e : byType.entrySet()) {
+            if (shown++ == 12) {
+                text.appendNewline().append(net.kyori.adventure.text.Component.text("and " + (byType.size() - 12) + " more kinds", NamedTextColor.GRAY));
+                break;
+            }
+            String name = e.getKey().toLowerCase(Locale.ROOT).replace('_', ' ');
+            text.appendNewline().append(net.kyori.adventure.text.Component.text(e.getValue() + " x " + name, NamedTextColor.WHITE));
+        }
+        if (g.xp() > 0) text.appendNewline().append(net.kyori.adventure.text.Component.text(Xp.levelFor(g.xp()) + " levels of XP", NamedTextColor.WHITE));
+        return text.build();
     }
 
     private void collect(Player p, String[] args) {
@@ -112,6 +131,10 @@ public final class GraveCommand {
     }
 
     private void trust(Player p, String[] args) {
+        if (!p.hasPermission("lanterngraves.share")) {
+            tell(p, "Your graves can only be opened by you on this server.", NamedTextColor.YELLOW);
+            return;
+        }
         if (args.length < 2) {
             tell(p, "/grave trust <player> [number|all] [time]", NamedTextColor.RED);
             return;

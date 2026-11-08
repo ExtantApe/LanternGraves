@@ -20,5 +20,11 @@ collect:
 # The recovery compass and BlueMapHUD's death marker both read it, so they lead to the lantern.
 point-death-location-at-grave: true
 
+# Near one of their graves, a player sees on the action bar how far it is and which way, in words
+# ("Your grave: 23 blocks northeast, 4 down"). Shown once a second while within range, in blocks.
+distance-hint:
+  enabled: true
+  range: 100
+
 # Worlds where no graves are made. Items drop as in vanilla there.
 disabled-worlds: []

@@ -1,12 +1,36 @@
 // Lava, the void in all three dimensions, explosions and everything else that can happen to a lantern.
 // After each: the items are all there exactly once, the lock holds, and the lantern comes back.
 import path from 'node:path'
-import { Server, newServer, bot, sleep, check, summary, holdings, graveFiles, holdingsTally, graveTally, sameTally, rightClickGrave, markers, respawned, JARS, WALKS } from './harness.mjs'
+import { Server, newServer, bot, sleep, check, summary, holdings, graveFiles, holdingsTally, graveTally, sameTally, rightClickGrave, markers, respawned, JARS, WALKS, loaded } from './harness.mjs'
 import { kit, calm, loose } from './basic.mjs'
 
 const near = (g, x, y, z, r = 1.6) => g && Math.hypot(g.pos[0] - x, g.pos[1] - y, g.pos[2] - z) <= r
 
 async function ownedGraves(s, owner) { return graveFiles(s).filter(g => g.owner === owner) }
+
+/**
+ * A death below the world. On 26.3, a bot that has just changed dimension isn't ticked by the server, so it
+ * never takes void damage on its own; then it's killed where it is with out_of_world damage, which is the
+ * same position and cause the plugin sees, and the test says so.
+ */
+async function voidDeath(s, name) {
+  const g = await deathGrave(s, name, 8000)
+  if (g) return g
+  console.log(`  ${name} wasn't ticked below the world: killing them there with out_of_world damage`)
+  await s.run(`damage ${name} 1000 minecraft:out_of_world`)
+  return deathGrave(s, name)
+}
+
+/** Waits until the owner has a settled grave (deaths by lava or the void take a few seconds). */
+async function deathGrave(s, owner, ms = 25000) {
+  const end = Date.now() + ms
+  while (Date.now() < end) {
+    const g = graveFiles(s).filter(g => g.owner === owner && !g.pending)
+    if (g.length) { await sleep(500); return g[0] }
+    await sleep(250)
+  }
+  return undefined
+}
 
 /** Lantern parts within 2 blocks of a point, counted on the server. */
 async function lanternAt(s, x, y, z, dim = 'overworld') {
@@ -36,6 +60,7 @@ async function graveUnchanged(s, before) {
 async function standAndWalk(s, b, name, dim, x, y, z) {
   await s.run(`execute in minecraft:${dim} run tp ${name} ${x + 0.5} ${y} ${z + 0.5} -90 0`)
   await sleep(1200)
+  loaded(b)
   if (WALKS) {
     b.setControlState('forward', true)
     await sleep(700)
@@ -57,12 +82,12 @@ export async function run(s) {
   await kit(s, 'Alder')
   const kitLava = holdingsTally(await holdings(s, 'Alder'))
   await s.run('tp Alder 44.5 -61 44.5')
-  await sleep(6000)
+  let gl = await deathGrave(s, 'Alder')
   await respawned(a)
-  let gl = (await ownedGraves(s, 'Alder'))[0]
   check('lava death: one grave', (await ownedGraves(s, 'Alder')).length === 1)
   check('lava death: the grave is on the last safe ground, not in the lava', gl && gl.pos[0] < 40 && gl.pos[1] === -60, String(gl?.pos))
   const lavaLoose = await loose(s)
+  if (lavaLoose.items) console.log('  loose items: ' + (await s.ask('data get entity @e[type=item,limit=2] Item', 600)).join(' ').slice(0, 300))
   check('lava death: nothing burnt or dropped', gl && sameTally(kitLava, graveTally([gl])).ok && lavaLoose.items === 0, (gl ? sameTally(kitLava, graveTally([gl])).diff : '') + ' ' + JSON.stringify(lavaLoose))
   // Lava flows over the grave spot later.
   await s.run(`setblock ${Math.floor(gl.pos[0])} -60 ${Math.floor(gl.pos[2])} lava`)
@@ -89,13 +114,13 @@ export async function run(s) {
     await kit(s, 'Alder')
     const kitVoid = holdingsTally(await holdings(s, 'Alder'))
     await s.run(`execute in minecraft:${dim} run tp Alder ${px} -200 ${pz}`)
-    await sleep(4000)
+    const gv = await voidDeath(s, 'Alder')
     await respawned(a)
-    const gv = (await ownedGraves(s, 'Alder'))[0]
     check(`${dim} void: one grave, nothing lost`, gv && sameTally(kitVoid, graveTally([gv])).ok, gv ? '' : 'no grave')
     check(`${dim} void: the grave is on the ground they last stood on`, gv && gv.pos[1] === floor && Math.abs(gv.pos[0] - px) < 5 && Math.abs(gv.pos[2] - pz) < 3, String(gv?.pos))
     check(`${dim} void: the grave records the right world`, gv && (dim === 'overworld' ? gv.world === 'world' : gv.world.includes(dim === 'the_nether' ? 'nether' : 'end')), gv?.world)
     await s.run(`execute in minecraft:${dim} run tp Alder ${gv.pos[0] - 2} ${floor} ${gv.pos[2]}`)
+    await sleep(800); loaded(a)
     await sleep(3800) // the respawn put them in the overworld: wait out the settle time
     await rightClickGrave(a)
     await sleep(600)
@@ -106,14 +131,16 @@ export async function run(s) {
   await kit(s, 'Birch')
   const kitB = holdingsTally(await holdings(s, 'Birch'))
   await s.run('execute in minecraft:the_end run tp Birch 2000 -200 2000')
-  await sleep(4000)
+  await sleep(800); loaded(b)
+  const gn = await voidDeath(s, 'Birch')
   await respawned(b)
-  const gn = (await ownedGraves(s, 'Birch'))[0]
   check('no safe ground: a grave is still made, nothing lost', gn && sameTally(kitB, graveTally([gn])).ok)
+  if (gn) await s.run(`execute in minecraft:the_end run forceload add ${Math.floor(gn.pos[0])} ${Math.floor(gn.pos[2])}`)
   const floorUnder = gn && (await s.ask(`execute in minecraft:the_end if block ${Math.floor(gn.pos[0])} ${gn.pos[1] - 1} ${Math.floor(gn.pos[2])} air`, 400)).some(l => /Test failed/.test(l))
   check('no safe ground: it falls back to solid ground at the End spawn', gn && Math.hypot(gn.pos[0], gn.pos[2]) < 4 && floorUnder, String(gn?.pos))
   if (gn) {
     await s.run(`execute in minecraft:the_end run tp Birch ${gn.pos[0] - 1.5} ${gn.pos[1]} ${gn.pos[2]}`)
+    await sleep(800); loaded(b)
     await sleep(3800)
     await rightClickGrave(b)
     await sleep(600)
@@ -123,8 +150,9 @@ export async function run(s) {
 
   // ------------------------------------------------------------ explosions
   console.log('\n# Explosions')
-  await s.run('tp Alder 80.5 -60 80.5', 'tp Birch 90.5 -60 80.5')
-  await sleep(1000)
+  await s.run('difficulty easy') // creepers need it; spawn_monsters is off so none turn up on their own
+  await s.run('execute in minecraft:overworld run tp Alder 80.5 -60 80.5', 'execute in minecraft:overworld run tp Birch 90.5 -60 80.5')
+  await sleep(1000); loaded(a); loaded(b); await sleep(500)
   await kit(s, 'Alder')
   const kitE = holdingsTally(await holdings(s, 'Alder'))
   // Killed by TNT: drops would normally be blown up too.
@@ -170,7 +198,7 @@ export async function run(s) {
   await s.run(`execute in minecraft:the_nether run setblock ${bx + 1} ${by} ${bz} red_bed[facing=east,part=foot]`,
     `execute in minecraft:the_nether run setblock ${bx + 2} ${by} ${bz} red_bed[facing=east,part=head]`,
     `execute in minecraft:the_nether run tp Alder ${bx + 4.5} ${by} ${bz + 0.5} 90 30`)
-  await sleep(1500)
+  await sleep(1500); loaded(a); await sleep(500)
   await a.activateBlock(a.blockAt(a.entity.position.offset(-2, 0, 0).floored())).catch(e => console.log('  bed: ' + e.message))
   await sleep(2000)
   check('bed in the Nether at the grave: items and lock intact', gb && await graveUnchanged(s, gb) && sameTally(kitN, graveTally([gb])).ok)
@@ -186,6 +214,7 @@ export async function run(s) {
   // ------------------------------------------------------------ other marker damage
   console.log('\n# Other damage to the lantern')
   await s.run(`execute in minecraft:overworld run tp Birch ${ge.pos[0] + 2} ${ge.pos[1]} ${ge.pos[2]}`, `execute in minecraft:overworld run tp Alder ${ge.pos[0] + 3} ${ge.pos[1]} ${ge.pos[2] + 2}`)
+  await sleep(1000); loaded(a); loaded(b)
   const at = `${gx} ${gy} ${gz}`
   const damage = [
     ['fire', [`setblock ${gx} ${gy - 1} ${gz} netherrack`, `setblock ${at} fire`]],
@@ -220,7 +249,8 @@ export async function run(s) {
 
   // Finally Alder collects: the whole kit is there.
   await s.run('effect clear Alder', `execute in minecraft:overworld run tp Alder ${ge.pos[0] + 2} ${ge.pos[1]} ${ge.pos[2]}`, 'clear Alder')
-  await sleep(3800)
+  await sleep(1000); loaded(a)
+  await sleep(3000)
   await rightClickGrave(a)
   await sleep(600)
   check('after all that, Alder collects everything', sameTally(kitE, holdingsTally(await holdings(s, 'Alder'))).ok && (await ownedGraves(s, 'Alder')).length === 0,
@@ -232,6 +262,6 @@ export async function run(s) {
 if (import.meta.url === `file://${process.argv[1]}`) {
   const s = new Server(newServer('hazards', { plugins: [path.join(JARS, 'worldedit-bukkit-7.4.6.jar')] }))
   await s.start()
-  try { await run(s) } finally { check('no Lantern Graves errors in the log', s.errors().length === 0, s.errors()[0]?.slice(0, 300)); await s.stop() }
+  try { await run(s) } finally { check('no Lantern Graves errors in the log', s.errors().length === 0, s.errors()[0]?.slice(0, 300)); await s.stop(); s.discard() }
   summary()
 }

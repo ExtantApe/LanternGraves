@@ -15,6 +15,9 @@ permissions:
   lanterngraves.use:
     description: Use /grave. Graves are made on death and collected by right-click whatever this is set to.
     default: true
+  lanterngraves.share:
+    description: Give a friend access to your graves with /grave trust. Deny it for groups whose graves only they should open, such as children.
+    default: true
   lanterngraves.admin:
     description: List, visit and move anyone's grave, see damaged files and reload. Can't open other players' graves.
     default: op

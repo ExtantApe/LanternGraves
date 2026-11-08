@@ -86,6 +86,7 @@ public final class LanternGravesPlugin extends JavaPlugin implements Listener {
         Bukkit.getScheduler().runTaskTimer(this, () -> {
             graves.retryUnsaved();
             markers.tick();
+            graves.hints();
             // Footing is also sampled here, not only on movement: a player who was teleported, pushed or
             // is standing still still has safe ground on record.
             for (Player p : Bukkit.getOnlinePlayers()) if (!p.isDead()) safeGround.observe(p);

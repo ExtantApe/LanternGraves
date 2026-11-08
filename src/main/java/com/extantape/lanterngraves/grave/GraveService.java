@@ -154,6 +154,9 @@ public final class GraveService {
             e.setNewTotalExp(0);
         }
         txns.add(p, txn);
+        Component said = e.deathMessage() == null ? Component.text("You died!") : e.deathMessage();
+        e.deathScreenMessageOverride(said.appendNewline().appendNewline()
+                .append(Component.text("Your things are safe in a grave at " + g.blockX() + ", " + g.blockY() + ", " + g.blockZ() + ".", NamedTextColor.GOLD)));
         graves.put(g.id(), g);
         newest.put(p.getUniqueId(), g.id());
         plugin.getLogger().info("Grave " + g.id() + " for " + p.getName() + " at " + where(g) + ": "
@@ -242,6 +245,37 @@ public final class GraveService {
             p.sendMessage(Component.text("Your things are safe in a grave at " + where(g) + ". ", NamedTextColor.GOLD)
                     .append(Component.text("Right-click its lantern to collect them. /grave lists your graves.", NamedTextColor.YELLOW)));
         });
+    }
+
+    /**
+     * Once a second: a player near one of their graves sees how far and which way on the action bar,
+     * in words, so it reads the same whatever colours someone can see.
+     */
+    public void hints() {
+        if (!settings.distanceHint()) return;
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            if (p.isDead()) continue;
+            Grave best = null;
+            double bestSq = settings.hintRange() * settings.hintRange();
+            for (Grave g : graves.values()) {
+                if (!g.settled() || !g.owner().equals(p.getUniqueId()) || !g.world().equals(p.getWorld().getName())) continue;
+                double dx = g.x() - p.getX(), dz = g.z() - p.getZ(), dy = g.y() - p.getY();
+                double d = dx * dx + dz * dz + dy * dy;
+                if (d < bestSq) { bestSq = d; best = g; }
+            }
+            if (best == null) continue;
+            int dist = (int) Math.round(Math.sqrt(bestSq));
+            String text = dist <= 2 ? "Your grave is right here. Right-click the lantern."
+                    : "Your grave: " + dist + " blocks " + Compass.direction(best.x() - p.getX(), best.z() - p.getZ())
+                    + heightHint(best.y() - p.getY());
+            p.sendActionBar(Component.text(text, NamedTextColor.GOLD));
+        }
+    }
+
+    private static String heightHint(double dy) {
+        if (dy > 3) return ", " + (int) Math.round(dy) + " up";
+        if (dy < -3) return ", " + (int) Math.round(-dy) + " down";
+        return "";
     }
 
     // ---------------------------------------------------------------- collecting

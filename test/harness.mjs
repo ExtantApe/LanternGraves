@@ -19,6 +19,7 @@ if (built.length !== 1) throw new Error(`Run ./gradlew build first: expected one
 export const JAR = path.join(LIBS, built[0])
 // Paper 26.1.2, 26.2 or 26.3. The bots speak 1.21.11, the newest mineflayer knows, and reach 26.x
 // through ViaVersion and ViaBackwards, which every test server gets.
+export const HOOK = path.join(ROOT, 'build/test-hook/LanternGravesTestHook.jar')
 export const VERSION = process.env.LG_TEST_VERSION ?? '26.3'
 export const JAVA = process.env.LG_TEST_JAVA ?? '/Library/Java/JavaVirtualMachines/openjdk-25.jdk/Contents/Home/bin/java'
 const VIA = ['ViaVersion-5.12.2.jar', 'ViaBackwards-5.12.2.jar']
@@ -57,10 +58,25 @@ function keepWarm(dir, version) {
   for (const f of ['libraries', 'versions', 'cache']) if (existsSync(path.join(dir, f))) execSync(`cp -cR "${path.join(dir, f)}" "${path.join(warm, f)}"`)
 }
 
+/** Another session's server can be on our port; wait for it rather than touch it. */
+async function portFree(ms = 15 * 60000) {
+  const net = await import('node:net')
+  const end = Date.now() + ms
+  let told = false
+  while (Date.now() < end) {
+    const free = await new Promise(r => { const t = net.createServer().once('error', () => r(false)).once('listening', () => t.close(() => r(true))).listen(PORT, '127.0.0.1') })
+    if (free) return
+    if (!told) { console.log(`  port ${PORT} is in use by something else; waiting for it`); told = true }
+    await sleep(5000)
+  }
+  throw new Error(`port ${PORT} stayed busy`)
+}
+
 export class Server {
   log = []
   constructor(dir, { version = VERSION, memory = '2G' } = {}) { Object.assign(this, { dir, version, memory }) }
   async start() {
+    await portFree()
     const from = this.log.length
     this.proc = spawn(JAVA, [`-Xms${this.memory}`, `-Xmx${this.memory}`, '-Dterminal.jline=false', '-Dterminal.ansi=false',
       '-Dpaper.disableChannelLimit=true', '-jar', 'paper.jar', 'nogui'], { cwd: this.dir, stdio: ['pipe', 'pipe', 'pipe'] })
@@ -118,6 +134,14 @@ export class Server {
     if (!done) { console.log('  server stuck on stop: killing it'); await this.kill9() }
   }
   kill9() { this.proc.kill('SIGKILL'); return this.exited }
+  /** Keeps the log and deletes the server folder: no server copies are left between runs. */
+  discard() {
+    const logs = path.join(BASE, 'logs')
+    mkdirSync(logs, { recursive: true })
+    const log = path.join(this.dir, 'logs/latest.log')
+    if (existsSync(log)) copyFileSync(log, path.join(logs, path.basename(this.dir) + '.log'))
+    rmSync(this.dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 500 })
+  }
   graveDir() { return path.join(this.dir, 'plugins/LanternGraves/graves') }
 }
 
@@ -131,8 +155,9 @@ export class Server {
 export const WALKS = VERSION !== '26.3'
 export async function bot(username, { port = PORT } = {}) {
   const b = mineflayer.createBot({ host: '127.0.0.1', port, username, version: '1.21.11', auth: 'offline', viewDistance: 'tiny', physicsEnabled: WALKS })
+  b.rawWrite = b._client.write.bind(b._client)
   if (!WALKS) {
-    const write = b._client.write.bind(b._client)
+    const write = b.rawWrite
     b._client.write = (name, data) => (/^(position|position_look|look|flying)$/.test(name) ? undefined : write(name, data))
   }
   b.chat_log = []
@@ -153,10 +178,21 @@ export async function respawned(b, ms = 10000) {
   const end = Date.now() + ms
   await sleep(300)
   while (Date.now() < end) {
-    if (b.health > 0 && b.entity) { if (!WALKS) b.physicsEnabled = false; return true }
+    if (b.health > 0 && b.entity) { if (!WALKS) b.physicsEnabled = false; await sleep(300); loaded(b); return true }
     await sleep(100)
   }
   return false
+}
+
+/** What a real client sends once it has loaded the world after a respawn or dimension change. */
+export function loaded(b) {
+  try { b._client.write('player_loaded', {}) } catch (e) { /* older protocol: nothing to send */ }
+  // The server ends a dimension change (and the invulnerability that comes with it) on the client's next
+  // movement packet. A single one, where the bot already is, is accepted even on 26.3.
+  if (!WALKS && b.entity) {
+    const p = b.entity.position
+    b.rawWrite('position_look', { x: p.x, y: p.y, z: p.z, yaw: 0, pitch: 0, flags: { onGround: true, hasHorizontalCollision: false } })
+  }
 }
 
 export const markers = (b, kind) => Object.values(b.entities).filter(e => e.name === kind)

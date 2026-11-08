@@ -6,7 +6,8 @@ import java.util.List;
 
 /** config.yml, read once per load or reload. */
 public record Settings(boolean light, int lightLevel, boolean label, double reach, int settleTicks,
-                       boolean pointDeathLocation, List<String> disabledWorlds) {
+                       boolean pointDeathLocation, List<String> disabledWorlds,
+                       boolean distanceHint, double hintRange) {
     public static Settings read(FileConfiguration c) {
         return new Settings(
                 c.getBoolean("marker.light", true),
@@ -15,6 +16,8 @@ public record Settings(boolean light, int lightLevel, boolean label, double reac
                 Math.max(1, c.getDouble("collect.reach", 4.0)),
                 Math.max(0, (int) Math.round(c.getDouble("collect.settle-seconds", 3) * 20)),
                 c.getBoolean("point-death-location-at-grave", true),
-                List.copyOf(c.getStringList("disabled-worlds")));
+                List.copyOf(c.getStringList("disabled-worlds")),
+                c.getBoolean("distance-hint.enabled", true),
+                Math.max(5, c.getDouble("distance-hint.range", 100)));
     }
 }

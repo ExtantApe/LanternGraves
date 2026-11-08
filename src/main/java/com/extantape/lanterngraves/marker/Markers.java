@@ -142,7 +142,8 @@ public final class Markers {
             tag(d, g);
         });
         TextDisplay label = !settings.label() ? null : w.spawn(at.clone().add(0, 1.15, 0), TextDisplay.class, d -> {
-            d.text(Component.text(g.ownerName() + "'s grave", NamedTextColor.GOLD));
+            d.text(Component.text(g.ownerName() + "'s grave", NamedTextColor.GOLD)
+                    .appendNewline().append(Component.text("Right-click to collect", NamedTextColor.GRAY)));
             d.setBillboard(Display.Billboard.CENTER);
             d.setBrightness(new Display.Brightness(15, 15));
             d.setViewRange(0.5f);

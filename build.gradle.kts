@@ -48,3 +48,13 @@ tasks.jar {
     archiveBaseName.set("LanternGraves")
     from("LICENSE")
 }
+
+// A tiny plugin for the bot tests only (test/), never shipped: it kills a tagged player as they log out.
+val testHook by sourceSets.creating {
+    compileClasspath += configurations.compileClasspath.get()
+}
+tasks.register<Jar>("hookJar") {
+    from(testHook.output)
+    archiveFileName.set("LanternGravesTestHook.jar")
+    destinationDirectory.set(layout.buildDirectory.dir("test-hook"))
+}
