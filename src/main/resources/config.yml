@@ -1,0 +1,24 @@
+# Lantern Graves. /lanterngraves reload applies changes.
+
+marker:
+  # An invisible light block at the lantern so it really glows. Only placed where the spot is
+  # empty air, and removed when the grave is emptied. Set false to change no blocks at all.
+  light: true
+  light-level: 12
+  # The owner's name floats above the lantern.
+  label: true
+
+collect:
+  # How close you must stand to use /grave collect, in blocks. Right-clicking the lantern works
+  # from normal reach.
+  reach: 4.0
+  # After joining, changing world or changing game mode, wait this long before a grave pays out,
+  # so an inventory plugin like Multiverse-Inventories has finished swapping inventories.
+  settle-seconds: 3
+
+# Point the player's last death location at their newest grave instead of where they died.
+# The recovery compass and BlueMapHUD's death marker both read it, so they lead to the lantern.
+point-death-location-at-grave: true
+
+# Worlds where no graves are made. Items drop as in vanilla there.
+disabled-worlds: []
