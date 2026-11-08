@@ -9,6 +9,7 @@ Run on 2026-11-07, with the v0.1.0 code, on fresh local Paper servers: 26.1.2 (b
 | rules | 29/29 | 29/29 | 29/29 |
 | crash | 45/45 | 45/45 | 45/45 |
 | mvinv | 16/16 | 16/16 | 16/16 |
+| griefprevention | 44/44 | 44/44 | 42/42 |
 
 Unit tests: 16/16 (`./gradlew build`), also in CI.
 
@@ -29,4 +30,5 @@ The hazards results above are from the rerun with those fixes.
 - **26.3 void after a dimension change:** the bot isn't ticked, so it never takes void damage. The test kills it at that spot with `out_of_world` damage, which is the same cause the plugin handles, and prints a line when it does.
 - **Dying during a logout:** a small test-only plugin (`src/testHook`, never shipped) kills a tagged player as they quit, standing in for a combat-log plugin.
 - **Exact crash points:** a test-only system property, `-Dlanterngraves.test.halt=<point>`, halts the JVM at each point where a grave file and the player's save briefly disagree. Without the property the code does nothing.
-- **Not tested:** land-claim plugins, combat-log plugins, other plugins changing death drops, items on the cursor or in the crafting grid, Folia, real players.
+- **GriefPrevention** (added 2026-11-08): 16.18.7 on 26.1.2 and 26.2, 16.18.8 on 26.3, each checked against Modrinth's SHA-512. Claims are made by bots with `/claim`. On 26.3 the two block-placing checks (that a claim stops a stranger building, and that the claim owner can build on the spot afterwards) are skipped, because turning the bot's head gets it kicked there.
+- **Not tested:** other land-claim plugins, combat-log plugins, other plugins changing death drops, items on the cursor or in the crafting grid, Folia, real players.

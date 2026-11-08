@@ -92,6 +92,7 @@ The bot tests in `test/` run on fresh Paper servers on 127.0.0.1, with mineflaye
 | `rules.mjs` | Strangers can't open, collect or break a grave. Friend access: one grave only, expiry and revoke. Several graves per player. Five players dying in the same tick. A grave in an unloaded chunk. `keep_inventory`, Curse of Vanishing, dying during a logout, logging out on the death screen and during a collection. |
 | `crash.mjs` | A clean restart. `kill -9` at 18 timings around a death and a collection, plus 8 around a half-finished one. A halt at each exact point where a grave and a player's save briefly disagree. A truncated file and a garbage file. |
 | `mvinv.mjs` | Multiverse-Inventories groups, the settle wait, and a grave moved into another group. |
+| `griefprevention.mjs` | GriefPrevention 16.18.7 on 26.1.2 and 26.2, 16.18.8 on 26.3, with made-up claims. A death inside someone else's claim, on its edge, in your own claim and in the wilderness: the grave lands where you died, only you can collect it (not the claim's owner, nor someone they trust), and the light block goes in and comes out. |
 
 Results are in [docs/test-results.md](docs/test-results.md).
 
@@ -101,7 +102,6 @@ What the bots can't show:
 - **Real movement on 26.3.** There, a 1.21.11 bot behind ViaVersion 5.12.2 is kicked if it moves on its own, so on 26.3 the bots are teleported. On 26.1.2 and 26.2 they really walk.
 - **Natural void damage right after a dimension change on 26.3.** A bot that has just changed dimension isn't ticked, so there the test kills it below the world with `out_of_world` damage instead. That's the same spot and cause the plugin acts on, and the test prints when it does this.
 - **A combat-log plugin.** Dying during a logout uses a small test-only plugin that kills a tagged player as they quit. It's built separately and never shipped.
-- **Land claims.** No claims plugin was installed. Lantern Graves doesn't check claims; inside one, it places only the light block, and only in air.
 
 To run them: `./gradlew build hookJar`, then in `test/`: `npm install`, `LG_TEST_BASE=<empty folder> node fetch.mjs` (it checks each Paper jar against Paper's published SHA-256), and `LG_TEST_BASE=… LG_TEST_EULA_FROM=<folder with an accepted eula.txt> LG_TEST_VERSION=26.3 node basic.mjs`. Each run makes one server on port 25611 and deletes it when it's done.
 
