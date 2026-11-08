@@ -145,6 +145,7 @@ public final class GraveService {
             plugin.getLogger().log(Level.SEVERE, "Couldn't save a grave for " + p.getName() + ". Their items drop as in vanilla.", ex);
             return;
         }
+        CrashPoint.at("death-written");
         e.getDrops().clear();
         e.getDrops().addAll(leftBehind);
         if (xp > 0) {
@@ -177,6 +178,7 @@ public final class GraveService {
                 return;
             }
         }
+        CrashPoint.at("death-saved");
         g.pending(null);
         persist(g);
         txns.remove(p, txn);
@@ -233,6 +235,15 @@ public final class GraveService {
         if (!settings.pointDeathLocation() || !p.isOnline()) return;
         World w = Bukkit.getWorld(g.world());
         if (w != null) p.setLastDeathLocation(new Location(w, g.x(), g.y(), g.z()));
+    }
+
+    /** After a grave is emptied: the death location leads to the newest grave left, or nowhere. */
+    private void repoint(UUID owner) {
+        Player p = Bukkit.getPlayer(owner);
+        if (p == null || !settings.pointDeathLocation()) return;
+        List<Grave> left = of(owner);
+        if (left.isEmpty()) p.setLastDeathLocation(null);
+        else pointAt(p, left.getLast());
     }
 
     public void onRespawn(Player p) {
@@ -345,6 +356,7 @@ public final class GraveService {
             tell(c, "The grave couldn't be opened safely, so nothing moved. Tell an admin.", NamedTextColor.RED);
             return false;
         }
+        CrashPoint.at("collect-written");
         // 2. Move it, and save the player with the transaction id alongside.
         for (Map.Entry<Integer, ItemStack> it : give.entrySet()) inv.setItem(plan.get(it.getKey()), it.getValue());
         if (xp > 0) addXp(c, xp);
@@ -354,6 +366,7 @@ public final class GraveService {
         } catch (RuntimeException ex) {
             plugin.getLogger().log(Level.WARNING, "Couldn't save " + c.getName() + "'s player data while collecting; the next save covers it", ex);
         }
+        CrashPoint.at("collect-saved");
         // 3. Take it out of the grave.
         for (int slot : give.keySet()) g.take(slot);
         g.xp(g.xp() - xp);
@@ -459,6 +472,7 @@ public final class GraveService {
             graves.remove(g.id());
             markers.remove(g);
             deleteFile(g);
+            repoint(g.owner());
             return;
         }
         try {

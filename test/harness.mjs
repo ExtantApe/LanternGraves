@@ -74,12 +74,13 @@ async function portFree(ms = 15 * 60000) {
 
 export class Server {
   log = []
+  jvm = [] // extra JVM flags for the next start, such as a test crash point
   constructor(dir, { version = VERSION, memory = '2G' } = {}) { Object.assign(this, { dir, version, memory }) }
   async start() {
     await portFree()
     const from = this.log.length
     this.proc = spawn(JAVA, [`-Xms${this.memory}`, `-Xmx${this.memory}`, '-Dterminal.jline=false', '-Dterminal.ansi=false',
-      '-Dpaper.disableChannelLimit=true', '-jar', 'paper.jar', 'nogui'], { cwd: this.dir, stdio: ['pipe', 'pipe', 'pipe'] })
+      '-Dpaper.disableChannelLimit=true', ...this.jvm, '-jar', 'paper.jar', 'nogui'], { cwd: this.dir, stdio: ['pipe', 'pipe', 'pipe'] })
     this.exited = new Promise(r => this.proc.on('exit', r))
     const proc = this.proc
     process.on('exit', () => { if (proc.exitCode === null) proc.kill('SIGKILL') }) // never leave a server behind
@@ -127,7 +128,7 @@ export class Server {
     if (!line) return undefined
     return parseSnbt(line.slice(line.indexOf(' has the following entity data: ') + 32))
   }
-  errors() { return this.log.filter(l => /LanternGraves/.test(l) && /(ERROR|Exception|SEVERE)/.test(l) && !/DAMAGED|damaged|won't load|Reason:|A copy|won't overwrite|\*{20}/.test(l)) }
+  errors() { return this.log.filter(l => /LanternGraves/.test(l) && /(ERROR|Exception|SEVERE)/.test(l) && !/DAMAGED|damaged|won't load|Reason:|A copy|won't overwrite|test halt at|\*{20}/.test(l)) }
   async stop() {
     this.send('stop')
     const done = await Promise.race([this.exited.then(() => true), sleep(90000).then(() => false)])
