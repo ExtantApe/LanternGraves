@@ -17,7 +17,7 @@ collect:
   settle-seconds: 3
 
 # Point the player's last death location at their newest grave instead of where they died.
-# The recovery compass and BlueMapHUD's death marker both read it, so they lead to the lantern.
+# The recovery compass and BlueMinimap's death marker both read it, so they lead to the lantern.
 point-death-location-at-grave: true
 
 # Near one of their graves, a player sees on the action bar how far it is and which way, in words

@@ -16,7 +16,7 @@ When a player dies, their items and XP go into a grave marked by a lantern, lock
   - The lantern really glows: an invisible light block goes in the spot, but only if it's empty air.
   - The owner and their friends see a gold outline through walls.
   - Within 100 blocks, the action bar says how far the grave is and which way, in words: "Your grave: 23 blocks northeast, 4 down".
-  - The recovery compass points at the newest grave, and so does BlueMapHUD's death marker if BlueMapHUD is installed.
+  - The recovery compass points at the newest grave, and so does BlueMinimap's death marker if BlueMinimap is installed.
 - **Inventory groups respected.** With Multiverse-Inventories, a grave pays out only in the inventory group it came from. For 3 seconds after joining or changing world or game mode, collecting waits, so an inventory swap can finish first.
 - **Crash-safe.** A grave file is written in full and flushed before it replaces the old one, with a checksum on the last line. If the server dies partway through a death or a collection, the player's own save decides which way it goes on their next join, so nothing is lost or copied. A damaged grave file is reported loudly, copied, and never overwritten or removed.
 
@@ -34,7 +34,7 @@ It changes no blocks except that optional light block, and it uses no NMS.
 1. Use Paper 26.1.2 or later, on Java 25.
 2. Put `LanternGraves-0.1.0.jar` in `plugins/` and restart.
 3. If AngelChest or another grave plugin is installed, remove it. Two grave plugins would both try to take the drops.
-4. Optional: Multiverse-Inventories 5 for per-group graves, and BlueMapHUD to see the grave on the minimap.
+4. Optional: Multiverse-Inventories 5 for per-group graves, and BlueMinimap to see the grave on the minimap.
 
 If Multiverse-Inventories is installed, leave its `apply-playerdata-on-join` off (the default). If it's on, LanternGraves warns at startup, because after a crash that setting can replace the saved inventory that LanternGraves checks.
 
@@ -73,7 +73,7 @@ Admins can't open other players' graves. A friend who collects a grave gets the 
 | `marker.label` | `true` | "Name's grave / Right-click to collect" above the lantern. |
 | `collect.reach` | `4.0` | How close `/grave collect` needs you to be, in blocks. |
 | `collect.settle-seconds` | `3` | How long collecting waits after joining or changing world or game mode. |
-| `point-death-location-at-grave` | `true` | Points the recovery compass and BlueMapHUD's death marker at the newest grave. |
+| `point-death-location-at-grave` | `true` | Points the recovery compass and BlueMinimap's death marker at the newest grave. |
 | `distance-hint.enabled`, `distance-hint.range` | `true`, `100` | The action bar distance and direction. |
 | `disabled-worlds` | `[]` | Worlds with no graves. |
 
@@ -109,7 +109,7 @@ To run them: `./gradlew build hookJar`, then in `test/`: `npm install`, `LG_TEST
 
 `./gradlew build` needs Java 25. It compiles against the Paper 26.1.2 API and runs the unit tests: the file format, every truncation and edit of a file, damaged files, slot placement, XP arithmetic, lengths and compass words. The jar is `build/libs/LanternGraves-<version>.jar`. A `v*` tag builds it and attaches it to a GitHub Release.
 
-More: [decisions](docs/decisions.md), [26.x audit](docs/26x-audit.md), [BlueMapHUD beacon](docs/bluemaphud-beacon.md).
+More: [decisions](docs/decisions.md), [26.x audit](docs/26x-audit.md), [BlueMinimap beacon](docs/blueminimap-beacon.md).
 
 ## License
 
