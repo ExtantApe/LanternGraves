@@ -10,7 +10,7 @@ LanternGraves targets Paper 26.1 and up on Java 25. It's compiled against the Pa
 - **Server-side footing.** `Player#isOnGround` is deprecated because the client reports it. Safe ground is now judged from the server's own position and velocity, and sampled every second as well as on movement.
 - **Display entities** for the lantern: a `BlockDisplay` everyone sees, a glowing copy shown only to the owner and their friends with `Player#showEntity` and `hideEntity`, a `TextDisplay` label and an `Interaction` hitbox. All are marked not persistent, so they're never saved with the world and can't be left behind.
 - **Adventure** text everywhere: chat, the action bar distance hint, hover text in `/grave list`, and the death screen through `PlayerDeathEvent#deathScreenMessageOverride`.
-- **`Player#setLastDeathLocation`** points the recovery compass, and BlueMapHUD's death marker, at the grave.
+- **`Player#setLastDeathLocation`** points the recovery compass, and BlueMinimap's death marker, at the grave.
 
 ## Kept, and why
 
