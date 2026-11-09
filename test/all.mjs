@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process'
 const args = process.argv.slice(2)
 const versions = args.filter(a => !a.startsWith('--'))
 const only = (args.find(a => a.startsWith('--suites=')) ?? '').slice(9).split(',').filter(Boolean)
-const SUITES = only.length ? only : ['basic', 'hazards', 'rules', 'crash', 'mvinv', 'griefprevention']
+const SUITES = only.length ? only : ['basic', 'extras', 'hazards', 'rules', 'crash', 'mvinv', 'griefprevention']
 let failed = 0
 for (const v of versions.length ? versions : ['26.1.2', '26.2', '26.3']) {
   for (const suite of SUITES) {
