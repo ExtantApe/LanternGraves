@@ -1,4 +1,4 @@
-# Lantern Graves
+# LanternGraves
 
 When a player dies, their items and XP go into a grave marked by a lantern, locked to them, until they come back for it. For Paper 26.1 and up.
 
@@ -36,7 +36,7 @@ It changes no blocks except that optional light block, and it uses no NMS.
 3. If AngelChest or another grave plugin is installed, remove it. Two grave plugins would both try to take the drops.
 4. Optional: Multiverse-Inventories 5 for per-group graves, and BlueMapHUD to see the grave on the minimap.
 
-If Multiverse-Inventories is installed, leave its `apply-playerdata-on-join` off (the default). If it's on, Lantern Graves warns at startup, because after a crash that setting can replace the saved inventory that Lantern Graves checks.
+If Multiverse-Inventories is installed, leave its `apply-playerdata-on-join` off (the default). If it's on, LanternGraves warns at startup, because after a crash that setting can replace the saved inventory that LanternGraves checks.
 
 ## Commands
 
@@ -79,7 +79,7 @@ Admins can't open other players' graves. A friend who collects a grave gets the 
 
 ## Files
 
-Each grave is one YAML file in `plugins/LanternGraves/graves/`, named after the grave's id. Items are stored as Paper's own item data in base64. Each item also has its type and amount in plain text, for anyone reading the file. Don't edit these files: the checksum on the last line makes Lantern Graves refuse an edited file. A file that won't load is copied to `plugins/LanternGraves/damaged/` and left where it is, and its items can't be collected until someone fixes it by hand.
+Each grave is one YAML file in `plugins/LanternGraves/graves/`, named after the grave's id. Items are stored as Paper's own item data in base64. Each item also has its type and amount in plain text, for anyone reading the file. Don't edit these files: the checksum on the last line makes LanternGraves refuse an edited file. A file that won't load is copied to `plugins/LanternGraves/damaged/` and left where it is, and its items can't be collected until someone fixes it by hand.
 
 ## Testing
 

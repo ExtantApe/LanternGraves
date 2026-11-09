@@ -39,7 +39,7 @@ public final class LanternGravesPlugin extends JavaPlugin implements Listener {
             loaded = store.loadAll();
         } catch (IOException e) {
             // Without the grave folder there's no safe way on: items would drop and existing graves vanish from view.
-            getLogger().log(Level.SEVERE, "Can't read " + store.dir() + ". Lantern Graves is turning itself off; deaths drop items as in vanilla.", e);
+            getLogger().log(Level.SEVERE, "Can't read " + store.dir() + ". LanternGraves is turning itself off; deaths drop items as in vanilla.", e);
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
@@ -75,7 +75,7 @@ public final class LanternGravesPlugin extends JavaPlugin implements Listener {
             event.registrar().register(Registration.tree("grave", "lanterngraves.use", grave::handle, grave::complete,
                     List.of("list", "collect", "trust", "untrust"), 3), "List, collect and share your graves", List.of("graves"));
             event.registrar().register(Registration.tree("lanterngraves", "lanterngraves.admin", admin::handle, admin::complete,
-                    List.of("list", "tp", "move", "damaged", "reload"), 2), "Lantern Graves admin commands");
+                    List.of("list", "tp", "move", "damaged", "reload"), 2), "LanternGraves admin commands");
         });
 
         // Players already online (a plugin reload): their live data is current, so settle against it.
@@ -120,14 +120,14 @@ public final class LanternGravesPlugin extends JavaPlugin implements Listener {
         getLogger().severe("A GRAVE FILE IS DAMAGED and won't load: " + d.file());
         getLogger().severe("Reason: " + d.reason());
         getLogger().severe(d.copy() == null ? "A copy COULDN'T be made. Back up that file now." : "A copy was kept at " + d.copy());
-        getLogger().severe("Lantern Graves won't overwrite or remove it. The items in it can't be collected until it's fixed.");
+        getLogger().severe("LanternGraves won't overwrite or remove it. The items in it can't be collected until it's fixed.");
         getLogger().severe(bar);
     }
 
     @EventHandler
     public void onAdminJoin(PlayerJoinEvent e) {
         if (damaged.isEmpty() || !e.getPlayer().hasPermission("lanterngraves.admin")) return;
-        e.getPlayer().sendMessage(Component.text("Lantern Graves: " + damaged.size() + " grave file" + (damaged.size() == 1 ? " is" : "s are")
+        e.getPlayer().sendMessage(Component.text("LanternGraves: " + damaged.size() + " grave file" + (damaged.size() == 1 ? " is" : "s are")
                 + " damaged and won't load. /lanterngraves damaged for details.", NamedTextColor.RED));
     }
 }

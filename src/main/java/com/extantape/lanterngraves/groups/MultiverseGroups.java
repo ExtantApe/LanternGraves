@@ -40,7 +40,7 @@ public final class MultiverseGroups implements InventoryGroups {
     public String crashWarning() {
         if (api.getInventoriesConfig().getApplyPlayerdataOnJoin()) {
             return "Multiverse-Inventories has apply-playerdata-on-join turned on. After a crash, it may replace the "
-                    + "inventory Lantern Graves checks on join, so a grave being filled or collected at the moment of a "
+                    + "inventory LanternGraves checks on join, so a grave being filled or collected at the moment of a "
                     + "crash could be settled the wrong way. Turn that option off to keep the crash guarantee.";
         }
         return null;

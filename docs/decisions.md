@@ -6,7 +6,7 @@ What the owner decided, and when. Don't reopen these without asking.
 
 - Graves stay locked to their owner and never disappear.
 - The owner can give a friend access to one grave or to all their active graves with a command.
-- The BlueMapHUD beacon is optional. Lantern Graves works fully without BlueMapHUD.
+- The BlueMapHUD beacon is optional. LanternGraves works fully without BlueMapHUD.
 - It replaces AngelChest.
 
 ## 2026-11-07

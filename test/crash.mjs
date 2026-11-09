@@ -201,8 +201,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const s = new Server(newServer('crash'))
   await s.start()
   try { await run(s) } finally {
-    // The damaged-file reports are expected; anything else from Lantern Graves at ERROR or SEVERE isn't.
-    check('no other Lantern Graves errors in the log', s.errors().length === 0, s.errors()[0]?.slice(0, 300))
+    // The damaged-file reports are expected; anything else from LanternGraves at ERROR or SEVERE isn't.
+    check('no other LanternGraves errors in the log', s.errors().length === 0, s.errors()[0]?.slice(0, 300))
     await s.stop(); s.discard()
   }
   summary()

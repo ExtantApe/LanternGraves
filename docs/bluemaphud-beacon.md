@@ -6,7 +6,7 @@ BlueMapHUD belongs to another session. This was read, not changed.
 
 BlueMapHUD draws each player's death point, with an arrow at the map edge when it's off screen. It reads that point from the player's last death location (`Player#getLastDeathLocation`), and only shows it in the same world.
 
-Lantern Graves sets that location to the player's newest grave (`point-death-location-at-grave: true`, the default). So after a void or lava death, BlueMapHUD's death marker points at the lantern on safe ground, not at the spot in the void. The vanilla recovery compass follows it too.
+LanternGraves sets that location to the player's newest grave (`point-death-location-at-grave: true`, the default). So after a void or lava death, BlueMapHUD's death marker points at the lantern on safe ground, not at the spot in the void. The vanilla recovery compass follows it too.
 
 What this doesn't do:
 
@@ -29,4 +29,4 @@ public interface HudWaypoints {
 public record WaypointStyle(String iconName, int rgb, String label) {}
 ```
 
-Lantern Graves would call `set` for each grave, for its owner and anyone they trust, and `remove` when a grave is emptied. A lantern icon (9x9, in white so it can be tinted) would go in BlueMapHUD's icon set. Until that exists, the death-location approach above stays the default.
+LanternGraves would call `set` for each grave, for its owner and anyone they trust, and `remove` when a grave is emptied. A lantern icon (9x9, in white so it can be tinted) would go in BlueMapHUD's icon set. Until that exists, the death-location approach above stays the default.
