@@ -1,4 +1,4 @@
-// The lock and friends, many graves at once, and the vanilla rules Lantern Graves leaves alone.
+// The lock and friends, many graves at once, and the vanilla rules LanternGraves leaves alone.
 import { Server, newServer, bot, sleep, check, summary, holdings, graveFiles, holdingsTally, graveTally, addTallies, sameTally, rightClickGrave, markers, respawned, loaded, HOOK } from './harness.mjs'
 import { kit, calm, loose } from './basic.mjs'
 
@@ -198,6 +198,6 @@ export async function run(s) {
 if (import.meta.url === `file://${process.argv[1]}`) {
   const s = new Server(newServer('rules', { plugins: [HOOK] }))
   await s.start()
-  try { await run(s) } finally { check('no Lantern Graves errors in the log', s.errors().length === 0, s.errors()[0]?.slice(0, 300)); await s.stop(); s.discard() }
+  try { await run(s) } finally { check('no LanternGraves errors in the log', s.errors().length === 0, s.errors()[0]?.slice(0, 300)); await s.stop(); s.discard() }
   summary()
 }

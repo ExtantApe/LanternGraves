@@ -36,4 +36,4 @@ jobs:
           cd ../..
           notes="docs/release-notes/$GITHUB_REF_NAME.md"
           if [ -f "$notes" ]; then how=(--notes-file "$notes"); else how=(--generate-notes); fi
-          gh release create "$GITHUB_REF_NAME" build/libs/LanternGraves-*.jar build/libs/LanternGraves.sha256 --title "Lantern Graves ${GITHUB_REF_NAME#v}" "${how[@]}"
+          gh release create "$GITHUB_REF_NAME" build/libs/LanternGraves-*.jar build/libs/LanternGraves.sha256 --title "LanternGraves ${GITHUB_REF_NAME#v}" "${how[@]}"

@@ -26,7 +26,7 @@ public final class GraveCodec {
     public static final int FORMAT = 1;
     private static final String SUM = "# sha256: ";
     private static final String HEADER = """
-            # A Lantern Graves grave. The items are Paper's own item data, in base64; type and amount
+            # A LanternGraves grave. The items are Paper's own item data, in base64; type and amount
             # are only there to read. Don't edit this file: the checksum on the last line will refuse it.
             """;
 

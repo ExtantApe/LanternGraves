@@ -151,7 +151,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const s = new Server(newServer('griefprevention', { plugins: [path.join(JARS, GP)] }))
   await s.start()
   try { await run(s) } finally {
-    check('no Lantern Graves errors in the log', s.errors().length === 0, s.errors()[0]?.slice(0, 300))
+    check('no LanternGraves errors in the log', s.errors().length === 0, s.errors()[0]?.slice(0, 300))
     const gpErr = s.log.filter(l => /GriefPrevention/.test(l) && /(ERROR|Exception|SEVERE)/.test(l))
     check('no GriefPrevention errors in the log', gpErr.length === 0, gpErr[0]?.slice(0, 300))
     await s.stop(); s.discard()

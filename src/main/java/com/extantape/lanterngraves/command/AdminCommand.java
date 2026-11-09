@@ -37,7 +37,7 @@ public final class AdminCommand {
             case "move" -> move(sender, args);
             case "reload" -> {
                 plugin.reload();
-                tell(sender, "Lantern Graves config reloaded.", NamedTextColor.GREEN);
+                tell(sender, "LanternGraves config reloaded.", NamedTextColor.GREEN);
             }
             case "damaged" -> damaged(sender);
             default -> {

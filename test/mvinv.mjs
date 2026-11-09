@@ -85,8 +85,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const s = new Server(newServer('mvinv', { plugins: [path.join(JARS, 'multiverse-core-5.8.2.jar'), path.join(JARS, 'multiverse-inventories-5.3.6.jar')] }))
   await s.start()
   try { await run(s) } finally {
-    check('Lantern Graves found Multiverse-Inventories', s.log.some(l => /Using Multiverse-Inventories groups/.test(l)))
-    check('no Lantern Graves errors in the log', s.errors().length === 0, s.errors()[0]?.slice(0, 300))
+    check('LanternGraves found Multiverse-Inventories', s.log.some(l => /Using Multiverse-Inventories groups/.test(l)))
+    check('no LanternGraves errors in the log', s.errors().length === 0, s.errors()[0]?.slice(0, 300))
     await s.stop(); s.discard()
   }
   summary()
