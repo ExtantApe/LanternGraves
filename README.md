@@ -2,11 +2,11 @@
 
 When a player dies, their items and XP go into a grave marked by a lantern, locked to them, until they come back for it. For Paper 26.1 and up.
 
-**Status:** early, version 0.1.0. Every test below passed with bots on fresh throwaway Paper servers. No real player has used it yet, and nobody has looked at the lantern in a real game client: whether it's easy to spot by day and by night, and whether collecting feels clear, are still unknown. See [Testing](#testing).
+**Status:** early, version 0.1.1. Every test below passed with bots on fresh throwaway Paper servers. No real player has used it yet, and nobody has looked at the lantern in a real game client: whether it's easy to spot by day and by night, and whether collecting feels clear, are still unknown. See [Testing](#testing).
 
 ## What it does
 
-- **Nothing drops.** On death, everything that would have dropped goes into a grave: inventory, armour and off hand, plus anything else in the drops, such as an item on the cursor or in the crafting grid (that last part isn't tested yet). So does all of the player's XP.
+- **Nothing drops.** On death, everything that would have dropped goes into a grave: inventory, armour and off hand, anything else in the drops, and items left on the cursor or in the input slots of a screen that was open, such as the crafting grid, a crafting table, an anvil or a smithing table. So does all of the player's XP. 0.1.0 dropped those cursor and screen items on the ground; 0.1.1 fixes that. Of the screens, the crafting grid and the anvil are bot-tested; the others use the same code.
 - **Everything comes back exactly.** Enchantments, names, damage, shulker box and bundle contents, trims and maps are all kept. Right-click the lantern and each item goes back to the slot it came from if that slot is free, or to a free slot if not. Whatever doesn't fit stays in the grave. Nothing is ever dropped on the ground.
 - **Graves never disappear, and only the owner can open one.** Other players can't open, collect, break or drain it with hoppers. The owner can let a friend collect a grave with `/grave trust`.
 - **Safe from the world.** The items aren't in the world at all. They're in a file in the plugin folder, so explosions, lava, fire, water, pistons, sand, `/kill` and WorldEdit can't reach them. If the lantern is damaged or removed, it comes back within a second.
@@ -26,13 +26,13 @@ It changes no blocks except that optional light block, and it uses no NMS.
 
 - **`keep_inventory` on:** no grave. The player keeps everything, as in vanilla.
 - **Curse of Vanishing:** cursed items vanish on death, as in vanilla, and don't go in the grave.
-- **Another plugin's choices:** items another plugin keeps on death stay with the player, and items another plugin adds to the drops go in the grave. Neither is tested yet.
+- **Another plugin's choices:** items another plugin keeps on death stay with the player, and items another plugin adds to the drops go in the grave. Both are tested (`extras.mjs`).
 - **`disabled-worlds`:** no graves there. Items drop as in vanilla.
 
 ## Install
 
 1. Use Paper 26.1.2 or later, on Java 25.
-2. Put `LanternGraves-0.1.0.jar` in `plugins/` and restart.
+2. Put `LanternGraves-0.1.1.jar` in `plugins/` and restart.
 3. If AngelChest or another grave plugin is installed, remove it. Two grave plugins would both try to take the drops.
 4. Optional: Multiverse-Inventories 5 for per-group graves, and BlueMinimap to see the grave on the minimap.
 
@@ -88,6 +88,7 @@ The bot tests in `test/` run on fresh Paper servers on 127.0.0.1, with mineflaye
 | Suite | What it covers |
 | --- | --- |
 | `basic.mjs` | Die, walk back, collect. A full inventory. |
+| `extras.mjs` | Items on the cursor, in the crafting grid and in an open anvil. Items another plugin keeps, and items another plugin adds to the drops. |
 | `hazards.mjs` | Lava, including lava flowing over the grave later. The void in the overworld, Nether and End, and with no safe ground known. TNT, creepers, a charged creeper, an end crystal, a respawn anchor and a bed in the Nether. Fire, water, a piston, falling sand, `/kill`, a WorldEdit cut with entities, and hoppers. |
 | `rules.mjs` | Strangers can't open, collect or break a grave. Friend access: one grave only, expiry and revoke. Several graves per player. Five players dying in the same tick. A grave in an unloaded chunk. `keep_inventory`, Curse of Vanishing, dying during a logout, logging out on the death screen and during a collection. |
 | `crash.mjs` | A clean restart. `kill -9` at 18 timings around a death and a collection, plus 8 around a half-finished one. A halt at each exact point where a grave and a player's save briefly disagree. A truncated file and a garbage file. |
@@ -99,7 +100,7 @@ Results are in [docs/test-results.md](docs/test-results.md).
 What the bots can't show:
 
 - **How it looks.** Whether the lantern, its glow and its light are easy to find by day and night, whether the display's full brightness reads as a lit lantern, and whether collecting feels clear. Only a real client can tell.
-- **Real movement on 26.3.** There, a 1.21.11 bot behind ViaVersion 5.12.2 is kicked if it moves on its own, so on 26.3 the bots are teleported. On 26.1.2 and 26.2 they really walk.
+- **Real movement on 26.3.** There, a 1.21.11 bot behind ViaVersion 5.12.2 is kicked if it moves on its own, so on 26.3 the bots are teleported. On 26.1.2 and 26.2 they really walk. For the same reason, the open-anvil case runs on 26.1.2 and 26.2 only.
 - **Natural void damage right after a dimension change on 26.3.** A bot that has just changed dimension isn't ticked, so there the test kills it below the world with `out_of_world` damage instead. That's the same spot and cause the plugin acts on, and the test prints when it does this.
 - **A combat-log plugin.** Dying during a logout uses a small test-only plugin that kills a tagged player as they quit. It's built separately and never shipped.
 

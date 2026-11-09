@@ -118,6 +118,19 @@ public final class GraveService {
         for (ItemStack rest : drops) {
             if (rest != null && !rest.isEmpty()) taken.put(extra++, rest);
         }
+        // The cursor and the input slots of a work screen open at death (the 2x2 crafting grid, a crafting table,
+        // an anvil, and so on) aren't in the drops: vanilla throws them out separately when the screen closes on
+        // death. Take them into the grave too, and clear them only once the grave is saved.
+        ItemStack cursor = p.getItemOnCursor();
+        boolean tookCursor = cursor != null && !cursor.isEmpty();
+        if (tookCursor) taken.put(extra++, cursor.clone());
+        org.bukkit.inventory.Inventory top = p.getOpenInventory().getTopInventory();
+        List<Integer> inputs = WorkScreens.inputSlots(top);
+        List<Integer> tookInputs = new ArrayList<>();
+        for (int slot : inputs) {
+            ItemStack in = top.getItem(slot);
+            if (in != null && !in.isEmpty()) { taken.put(extra++, in.clone()); tookInputs.add(slot); }
+        }
 
         int xp = e.getKeepLevel() ? 0 : Xp.total(p.getLevel(), p.getExp());
         if (taken.isEmpty() && xp == 0) return;
@@ -146,6 +159,8 @@ public final class GraveService {
             return;
         }
         CrashPoint.at("death-written");
+        if (tookCursor) p.setItemOnCursor(null);
+        for (int slot : tookInputs) top.setItem(slot, null);
         e.getDrops().clear();
         e.getDrops().addAll(leftBehind);
         if (xp > 0) {
