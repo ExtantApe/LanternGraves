@@ -28,3 +28,9 @@ distance-hint:
 
 # Worlds where no graves are made. Items drop as in vanilla there.
 disabled-worlds: []
+
+# Rewild (if installed) resets untouched wild land. With this on, LanternGraves tells Rewild which chunks hold a
+# grave, and Rewild never resets them. Turned off, LanternGraves doesn't report, and Rewild then resets nothing while
+# both run. Read at startup: restart after changing it.
+rewild:
+  keep-graves: true

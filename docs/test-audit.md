@@ -2,6 +2,22 @@
 
 Kept by this repo's owning session (Minecraft: Plugins Lead), per `~/Code/CLAUDE.md`, "Test self-audits". Newest first.
 
+## 2026-11-10: Rewild (0.1.2)
+
+Gap reported by the server session's audit: LanternGraves registered no Rewild KeepProvider, so with both installed Rewild reset nothing. Fixed in 0.1.2, and covered:
+
+| Promise | Covered by |
+| --- | --- |
+| Every chunk holding a grave is reported to Rewild, once, with a reason | unit `RewildKeepsTest.everyChunkWithAGraveIsKeptOnceWithAReason`, `blockCoordinatesRoundDownIntoTheRightChunk`; bots `rewild.mjs` ("Rewild names the grave as the reason the chunk is kept") |
+| While a grave file is damaged, LanternGraves refuses to answer, so Rewild resets nothing (fail closed) | unit `whileAGraveFileIsDamagedItThrowsSoRewildResetsNothing` |
+| `rewild.keep-graves: false` means no report, said at startup, and Rewild resets nothing | bots `rewild.mjs` |
+| Control: no graves, nothing kept; a far chunk has no grave reason | unit `controlNoGravesKeepsNothing`; bots |
+
+`rewild.mjs` passed 8/8 on Paper 26.1.2 with Rewild 0.2.1.
+
+**Skipped:** a damaged grave file in the bot test (the unit test covers the refusal; Rewild's side, turning a throw into "nothing resets", is Rewild's own tested behavior).
+
+
 ## 2026-11-09: first full audit (at 0.1.0, fixed in 0.1.1)
 
 LanternGraves holds players' items, so data comes first: nothing lost, nothing copied. Every bot suite counts every item before and after, shulker and bundle contents included. Suites: `basic`, `extras`, `hazards`, `rules`, `crash`, `mvinv`, `griefprevention` on throwaway Paper 26.1.2, 26.2 and 26.3; unit tests in `src/test`.

@@ -9,6 +9,7 @@ import com.extantape.lanterngraves.grave.SafeGround;
 import com.extantape.lanterngraves.groups.InventoryGroups;
 import com.extantape.lanterngraves.groups.MultiverseGroups;
 import com.extantape.lanterngraves.listen.GraveListener;
+import com.extantape.lanterngraves.listen.RewildKeeps;
 import com.extantape.lanterngraves.marker.Markers;
 import com.extantape.lanterngraves.store.GraveStore;
 import net.kyori.adventure.text.Component;
@@ -69,6 +70,14 @@ public final class LanternGravesPlugin extends JavaPlugin implements Listener {
 
         getServer().getPluginManager().registerEvents(new GraveListener(graves, markers, safeGround), this);
         getServer().getPluginManager().registerEvents(this, this);
+        // Rewild, if it's installed, must never reset a chunk with a grave in it.
+        if (settings.rewildKeepGraves()) {
+            RewildKeeps rewild = new RewildKeeps(this, graves::all, () -> !damaged.isEmpty());
+            getServer().getPluginManager().registerEvents(rewild, this);
+            rewild.start();
+        } else if (Bukkit.getPluginManager().getPlugin("Rewild") != null) {
+            getLogger().info("rewild.keep-graves is off, so LanternGraves doesn't tell Rewild where graves are, and Rewild resets nothing while both run.");
+        }
         GraveCommand grave = new GraveCommand(graves);
         AdminCommand admin = new AdminCommand(this, graves);
         getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {

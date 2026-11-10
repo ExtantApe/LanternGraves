@@ -2,7 +2,7 @@
 
 When a player dies, their items and XP go into a grave marked by a lantern, locked to them, until they come back for it. For Paper 26.1 and up.
 
-**Status:** early, version 0.1.1. Every test below passed with bots on fresh throwaway Paper servers. No real player has used it yet, and nobody has looked at the lantern in a real game client: whether it's easy to spot by day and by night, and whether collecting feels clear, are still unknown. See [Testing](#testing).
+**Status:** early, version 0.1.2. Every test below passed with bots on fresh throwaway Paper servers. No real player has used it yet, and nobody has looked at the lantern in a real game client: whether it's easy to spot by day and by night, and whether collecting feels clear, are still unknown. See [Testing](#testing).
 
 ## What it does
 
@@ -76,6 +76,7 @@ Admins can't open other players' graves. A friend who collects a grave gets the 
 | `point-death-location-at-grave` | `true` | Points the recovery compass and BlueMinimap's death marker at the newest grave. |
 | `distance-hint.enabled`, `distance-hint.range` | `true`, `100` | The action bar distance and direction. |
 | `disabled-worlds` | `[]` | Worlds with no graves. |
+| `rewild.keep-graves` | `true` | Tells [Rewild](https://github.com/ExtantApe/Rewild), if it's installed, which chunks hold a grave, so it never resets them. While a grave file can't be read, LanternGraves won't answer, and Rewild resets nothing in that world. Turned off, Rewild resets nothing while both run. Read at startup. |
 
 ## Files
 
@@ -89,6 +90,7 @@ The bot tests in `test/` run on fresh Paper servers on 127.0.0.1, with mineflaye
 | --- | --- |
 | `basic.mjs` | Die, walk back, collect. A full inventory. |
 | `extras.mjs` | Items on the cursor, in the crafting grid and in an open anvil. Items another plugin keeps, and items another plugin adds to the drops. |
+| `rewild.mjs` | With Rewild installed: a grave's chunk is kept, named "a grave (LanternGraves)" by `/rewild why`, and a far chunk isn't. With `rewild.keep-graves` off, Rewild resets nothing and says why. Needs a Rewild jar in the jars folder. |
 | `hazards.mjs` | Lava, including lava flowing over the grave later. The void in the overworld, Nether and End, and with no safe ground known. TNT, creepers, a charged creeper, an end crystal, a respawn anchor and a bed in the Nether. Fire, water, a piston, falling sand, `/kill`, a WorldEdit cut with entities, and hoppers. |
 | `rules.mjs` | Strangers can't open, collect or break a grave. Friend access: one grave only, expiry and revoke. Several graves per player. Five players dying in the same tick. A grave in an unloaded chunk. `keep_inventory`, Curse of Vanishing, dying during a logout, logging out on the death screen and during a collection. |
 | `crash.mjs` | A clean restart. `kill -9` at 18 timings around a death and a collection, plus 8 around a half-finished one. A halt at each exact point where a grave and a player's save briefly disagree. A truncated file and a garbage file. |
