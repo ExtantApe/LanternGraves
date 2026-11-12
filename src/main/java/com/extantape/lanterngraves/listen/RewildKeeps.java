@@ -87,6 +87,8 @@ public final class RewildKeeps implements Listener {
                 for (long[] c : chunksIn(graves.get(), ((World) args[0]).getName())) out.add(make.newInstance((int) c[0], (int) c[1], REASON));
                 yield out;
             }
+            // Rewild 0.3.0 also asks for block areas to keep in place. A grave keeps its whole chunk, so there are none.
+            case "areas" -> List.of();
             case "hashCode" -> System.identityHashCode(proxy);
             case "equals" -> proxy == args[0];
             case "toString" -> "LanternGraves' grave keeps";

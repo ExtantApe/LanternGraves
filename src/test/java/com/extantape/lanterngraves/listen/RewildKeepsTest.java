@@ -17,6 +17,10 @@ class RewildKeepsTest {
     public interface FakeKeepProvider {
         record Keep(int chunkX, int chunkZ, String reason) {}
         Collection<Keep> keeps(World world);
+        /** Added in Rewild 0.3.0, with a default of none. */
+        default Collection<Object> areas(World world) {
+            return List.of();
+        }
     }
 
     static Grave grave(String world, double x, double z) {
@@ -37,6 +41,11 @@ class RewildKeepsTest {
         var keeps = List.copyOf(p.keeps(world("world")));
         assertEquals(List.of(new FakeKeepProvider.Keep(0, 0, "a grave"), new FakeKeepProvider.Keep(-1, -2, "a grave")), keeps,
             "two graves in chunk 0,0 count once; -1,-17 is chunk -1,-2; the nether grave isn't in this world");
+    }
+
+    @Test void rewild030sAreasCallGetsNoneInsteadOfAnError() throws Exception {
+        // Rewild 0.3.0 asks providers for block areas too. Graves keep whole chunks, so the answer is none, not a refusal.
+        assertTrue(provider(List.of(grave("world", 5, 5)), false).areas(world("world")).isEmpty());
     }
 
     @Test void controlNoGravesKeepsNothing() throws Exception {
