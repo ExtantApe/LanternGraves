@@ -150,7 +150,7 @@ export class Server {
 
 /**
  * physics: on Paper 26.3 behind ViaVersion 5.12.2 a 1.21.11 bot is kicked for "Invalid move player packet"
- * once it moves on its own (seen in ReturnGate and WildernessRegen too). So there the bots don't move
+ * once it moves on its own (seen in Wayport and Rewild too). So there the bots don't move
  * themselves: their movement packets are dropped and the console teleports them. On 26.1.2 and 26.2 they walk.
  */
 export const WALKS = VERSION !== '26.3'
