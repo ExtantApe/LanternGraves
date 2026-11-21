@@ -143,14 +143,17 @@ public final class LanternGravesPlugin extends JavaPlugin implements Listener {
                 + " damaged and won't load. /lanterngraves damaged for details.", NamedTextColor.RED));
     }
 
-    /** Mayor coming or going changes who sees whose grave it is (D231). */
+    /**
+     * Mayor coming or going changes who sees whose grave it is (D231). Rule changes inside Mayor (reload, pause,
+     * circles) need no event: the markers' one-second tick asks again for every grave and player.
+     */
     @EventHandler
     public void onMayorChange(org.bukkit.event.server.PluginEnableEvent e) {
-        if (e.getPlugin().getName().equals("Mayor") && names != null) names.connect(this);
+        if (e.getPlugin().getName().equals("Mayor") && names != null) { names.connect(this); markers.refreshViewers(); }
     }
 
     @EventHandler
     public void onMayorGone(org.bukkit.event.server.PluginDisableEvent e) {
-        if (e.getPlugin().getName().equals("Mayor") && names != null) Bukkit.getScheduler().runTask(this, () -> names.connect(this));
+        if (e.getPlugin().getName().equals("Mayor") && names != null) Bukkit.getScheduler().runTask(this, () -> { names.connect(this); markers.refreshViewers(); });
     }
 }
