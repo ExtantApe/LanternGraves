@@ -46,14 +46,18 @@ public final class Markers {
     private Settings settings;
     private final Map<UUID, Parts> live = new HashMap<>();
 
-    private record Parts(BlockDisplay lantern, BlockDisplay glow, TextDisplay label, Interaction hitbox) {
+    /** {@code label} carries the owner's name and {@code anon} just "Grave"; each player sees one of them (D231). */
+    private record Parts(BlockDisplay lantern, BlockDisplay glow, TextDisplay label, TextDisplay anon, Interaction hitbox) {
         List<Entity> all() {
-            return label == null ? List.of(lantern, glow, hitbox) : List.of(lantern, glow, label, hitbox);
+            return label == null ? List.of(lantern, glow, hitbox) : List.of(lantern, glow, label, anon, hitbox);
         }
     }
 
-    public Markers(Plugin plugin, GraveService graves, Settings settings) {
+    private final GraveNames names;
+
+    public Markers(Plugin plugin, GraveService graves, Settings settings, GraveNames names) {
         this.plugin = plugin;
+        this.names = names;
         this.graves = graves;
         this.settings = settings;
         this.key = new NamespacedKey(plugin, "grave");
@@ -100,7 +104,7 @@ public final class Markers {
         } else {
             Location base = base(g, w);
             for (Entity e : p.all()) {
-                Location want = e == p.label ? base.clone().add(0, 1.15, 0) : base;
+                Location want = e == p.label || e == p.anon ? base.clone().add(0, 1.15, 0) : base;
                 if (e.getLocation().distanceSquared(want) > 0.0001) e.teleport(want);
             }
         }
@@ -148,6 +152,16 @@ public final class Markers {
             d.setBrightness(new Display.Brightness(15, 15));
             d.setViewRange(0.5f);
             d.setShadowed(true);
+            d.setVisibleByDefault(false);
+            tag(d, g);
+        });
+        TextDisplay anon = label == null ? null : w.spawn(at.clone().add(0, 1.15, 0), TextDisplay.class, d -> {
+            d.text(Component.text("Grave", NamedTextColor.GOLD));
+            d.setBillboard(Display.Billboard.CENTER);
+            d.setBrightness(new Display.Brightness(15, 15));
+            d.setViewRange(0.5f);
+            d.setShadowed(true);
+            d.setVisibleByDefault(false);
             tag(d, g);
         });
         Interaction hitbox = w.spawn(at, Interaction.class, i -> {
@@ -156,7 +170,7 @@ public final class Markers {
             i.setResponsive(true);
             tag(i, g);
         });
-        Parts parts = new Parts(lantern, glow, label, hitbox);
+        Parts parts = new Parts(lantern, glow, label, anon, hitbox);
         showGlowTo(g, parts);
         return parts;
     }
@@ -173,6 +187,11 @@ public final class Markers {
         for (Player p : Bukkit.getOnlinePlayers()) {
             if (g.mayOpen(p.getUniqueId(), now)) p.showEntity(plugin, parts.glow);
             else p.hideEntity(plugin, parts.glow);
+            if (parts.label == null) continue;
+            // The owner's name only for players the server's groups allow; "Grave" for everyone else (D231).
+            boolean named = names.showName(p, g);
+            if (named) { p.showEntity(plugin, parts.label); p.hideEntity(plugin, parts.anon); }
+            else { p.hideEntity(plugin, parts.label); p.showEntity(plugin, parts.anon); }
         }
     }
 

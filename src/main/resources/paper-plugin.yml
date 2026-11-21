@@ -11,6 +11,11 @@ dependencies:
       load: BEFORE
       required: false
       join-classpath: true
+    # Optional. Decides who sees whose grave it is, by the server's player groups (D231). Without it, others see "Grave".
+    Mayor:
+      load: BEFORE
+      required: false
+      join-classpath: true
 permissions:
   lanterngraves.use:
     description: Use /grave. Graves are made on death and collected by right-click whatever this is set to.
