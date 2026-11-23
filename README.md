@@ -2,7 +2,7 @@
 
 When a player dies, their items and XP go into a grave marked by a lantern, locked to them, until they come back for it. For Paper 26.1 and up.
 
-**Status:** early, version 0.1.3. Every test below passed with bots on fresh throwaway Paper servers. No real player has used it yet, and nobody has looked at the lantern in a real game client: whether it's easy to spot by day and by night, and whether collecting feels clear, are still unknown. See [Testing](#testing).
+**Status:** early, version 0.2.0. Every test below passed with bots on fresh throwaway Paper servers. No real player has used it yet, and nobody has looked at the lantern in a real game client: whether it's easy to spot by day and by night, and whether collecting feels clear, are still unknown. See [Testing](#testing).
 
 ## What it does
 
@@ -70,7 +70,7 @@ Admins can't open other players' graves. A friend who collects a grave gets the 
 | --- | --- | --- |
 | `marker.light` | `true` | The invisible light block at the lantern. Only placed in empty air, and removed when the grave is emptied. `false` changes no blocks at all. |
 | `marker.light-level` | `12` | 1 to 15. |
-| `marker.label` | `true` | "Name's grave / Right-click to collect" above the lantern. |
+| `marker.label` | `true` | A label above the lantern. The owner, and players the server's groups allow, see "Name's grave / Right-click to collect"; everyone else sees "Grave". |
 | `collect.reach` | `4.0` | How close `/grave collect` needs you to be, in blocks. |
 | `collect.settle-seconds` | `3` | How long collecting waits after joining or changing world or game mode. |
 | `point-death-location-at-grave` | `true` | Points the recovery compass and BlueMapMini's death marker at the newest grave. |
@@ -79,6 +79,8 @@ Admins can't open other players' graves. A friend who collects a grave gets the 
 | `rewild.keep-graves` | `true` | Tells [Rewild](https://github.com/ExtantApe/Rewild), if it's installed, which chunks hold a grave, so it never resets them. While a grave file can't be read, LanternGraves won't answer, and Rewild resets nothing in that world. Turned off, Rewild resets nothing while both run. Read at startup. |
 
 ## Files
+
+**Whose grave it is.** With Mayor 0.7.0 or newer installed, a grave shows its owner's name only to players the server's player groups (Mayor's circles and worlds) allow to see each other, the same rule as chat. Without Mayor, or if Mayor can't answer, only the owner sees the name and everyone else sees "Grave".
 
 Each grave is one YAML file in `plugins/LanternGraves/graves/`, named after the grave's id. Items are stored as Paper's own item data in base64. Each item also has its type and amount in plain text, for anyone reading the file. Don't edit these files: the checksum on the last line makes LanternGraves refuse an edited file. A file that won't load is copied to `plugins/LanternGraves/damaged/` and left where it is, and its items can't be collected until someone fixes it by hand.
 

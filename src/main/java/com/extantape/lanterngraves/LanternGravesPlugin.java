@@ -28,6 +28,7 @@ import java.util.logging.Level;
 public final class LanternGravesPlugin extends JavaPlugin implements Listener {
     private GraveService graves;
     private Markers markers;
+    private com.extantape.lanterngraves.marker.GraveNames names;
     private List<GraveStore.Damaged> damaged = List.of();
 
     @Override
@@ -65,8 +66,10 @@ public final class LanternGravesPlugin extends JavaPlugin implements Listener {
         SafeGround safeGround = new SafeGround();
         graves = new GraveService(this, store, groups, settings, safeGround);
         graves.load(loaded.graves());
-        markers = new Markers(this, graves, settings);
+        names = new com.extantape.lanterngraves.marker.GraveNames(getLogger());
+        markers = new Markers(this, graves, settings, names);
         graves.markers(markers);
+        names.connect(this);
 
         getServer().getPluginManager().registerEvents(new GraveListener(graves, markers, safeGround), this);
         getServer().getPluginManager().registerEvents(this, this);
@@ -138,5 +141,19 @@ public final class LanternGravesPlugin extends JavaPlugin implements Listener {
         if (damaged.isEmpty() || !e.getPlayer().hasPermission("lanterngraves.admin")) return;
         e.getPlayer().sendMessage(Component.text("LanternGraves: " + damaged.size() + " grave file" + (damaged.size() == 1 ? " is" : "s are")
                 + " damaged and won't load. /lanterngraves damaged for details.", NamedTextColor.RED));
+    }
+
+    /**
+     * Mayor coming or going changes who sees whose grave it is (D231). Rule changes inside Mayor (reload, pause,
+     * circles) need no event: the markers' one-second tick asks again for every grave and player.
+     */
+    @EventHandler
+    public void onMayorChange(org.bukkit.event.server.PluginEnableEvent e) {
+        if (e.getPlugin().getName().equals("Mayor") && names != null) { names.connect(this); markers.refreshViewers(); }
+    }
+
+    @EventHandler
+    public void onMayorGone(org.bukkit.event.server.PluginDisableEvent e) {
+        if (e.getPlugin().getName().equals("Mayor") && names != null) Bukkit.getScheduler().runTask(this, () -> { names.connect(this); markers.refreshViewers(); });
     }
 }
