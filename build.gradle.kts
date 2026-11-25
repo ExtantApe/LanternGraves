@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "com.extantape"
-version = "0.2.0"
+version = "0.3.0"
 
 java {
     toolchain.languageVersion.set(JavaLanguageVersion.of(25))
@@ -21,9 +21,9 @@ val mvInventories = "org.mvplugins.multiverse.inventories:multiverse-inventories
 dependencies {
     compileOnly(paperApi)
     compileOnly(mvInventories) { isTransitive = false }
-    // Mayor's ReachService, for whose name a grave shows (D231). Supplied at runtime by Mayor itself.
-    compileOnly(project(":mayor-stub"))
-    testImplementation(project(":mayor-stub"))
+    // Posse's ReachService, for whose name a grave shows (D231). Supplied at runtime by Posse itself.
+    compileOnly(project(":posse-stub"))
+    testImplementation(project(":posse-stub"))
 
     testImplementation(paperApi)
     testImplementation(platform("org.junit:junit-bom:5.11.4"))

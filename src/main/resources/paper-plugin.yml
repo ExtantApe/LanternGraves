@@ -12,7 +12,7 @@ dependencies:
       required: false
       join-classpath: true
     # Optional. Decides who sees whose grave it is, by the server's player groups (D231). Without it, others see "Grave".
-    Mayor:
+    Posse:
       load: BEFORE
       required: false
       join-classpath: true

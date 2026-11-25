@@ -20,6 +20,17 @@ class GraveNamesTest {
     }
 
     @Test
+    void onlyThePosseNameIsTrustedAndAnOldMayorPluginIsIgnored() {
+        assertTrue(GraveNames.isProvider("Posse"));
+        assertFalse(GraveNames.isProvider("Mayor"), "the old name is not recognized");
+        assertFalse(GraveNames.isProvider("mayor"));
+        assertFalse(GraveNames.isProvider("posse"), "an exact match, so a look-alike can't stand in");
+        assertFalse(GraveNames.isProvider(null));
+        // With no provider connected there are no rules, so everyone but the owner sees "Grave".
+        assertFalse(names.decide(other, owner, null, null, "kids"));
+    }
+
+    @Test
     void noGroupsMeansOthersSeeGrave() {
         assertFalse(names.decide(other, owner, null, null, "survival"));
     }
@@ -38,6 +49,6 @@ class GraveNamesTest {
     @Test
     void rulesThatFailShowGrave() {
         assertFalse(names.decide(other, owner, (v, o, w) -> { throw new IllegalStateException("down"); }, null, "kids"));
-        assertFalse(names.decide(other, owner, (v, o, w) -> { throw new NoSuchMethodError("old Mayor"); }, null, "kids"));
+        assertFalse(names.decide(other, owner, (v, o, w) -> { throw new NoSuchMethodError("an older Posse"); }, null, "kids"));
     }
 }

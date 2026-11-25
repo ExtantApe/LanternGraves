@@ -1,4 +1,4 @@
-// A compile-only copy of Mayor's ReachService, so LanternGraves builds without Mayor. Never shipped.
+// A compile-only copy of Posse's ReachService, so LanternGraves builds without Posse. Never shipped.
 plugins { java }
 repositories {
     mavenCentral()
