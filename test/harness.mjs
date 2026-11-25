@@ -11,7 +11,7 @@ import nbt from 'prismarine-nbt'
 export const BASE = process.env.LG_TEST_BASE
 if (!BASE) throw new Error('Set LG_TEST_BASE to a throwaway folder (node fetch.mjs fills its jars/)')
 export const JARS = path.join(BASE, 'jars')
-export const PORT = 25611
+export const PORT = Number(process.env.LG_TEST_PORT ?? 25611)
 const ROOT = new URL('../', import.meta.url).pathname
 const LIBS = path.join(ROOT, 'build/libs/')
 const built = existsSync(LIBS) ? readdirSync(LIBS).filter(f => /^LanternGraves-[\d.]+\.jar$/.test(f)) : []

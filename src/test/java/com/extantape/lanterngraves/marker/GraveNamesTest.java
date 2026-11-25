@@ -38,6 +38,6 @@ class GraveNamesTest {
     @Test
     void rulesThatFailShowGrave() {
         assertFalse(names.decide(other, owner, (v, o, w) -> { throw new IllegalStateException("down"); }, null, "kids"));
-        assertFalse(names.decide(other, owner, (v, o, w) -> { throw new NoSuchMethodError("old Mayor"); }, null, "kids"));
+        assertFalse(names.decide(other, owner, (v, o, w) -> { throw new NoSuchMethodError("an older Posse"); }, null, "kids"));
     }
 }

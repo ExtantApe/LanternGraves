@@ -2,7 +2,7 @@
 
 When a player dies, their items and XP go into a grave marked by a lantern, locked to them, until they come back for it. For Paper 26.1 and up.
 
-**Status:** early, version 0.2.0. Every test below passed with bots on fresh throwaway Paper servers. No real player has used it yet, and nobody has looked at the lantern in a real game client: whether it's easy to spot by day and by night, and whether collecting feels clear, are still unknown. See [Testing](#testing).
+**Status:** early, version 0.3.0, for Posse 0.11.0 (formerly Mayor; the Mayor name is no longer recognized). 0.3.0 was checked on 2026-11-25 with Posse's own live suite (103/103 on Paper 26.1.2, 26.2 and 26.3) and this repo's `basic` and `rules` suites; the other suites weren't rerun. Every test below passed with bots on fresh throwaway Paper servers. No real player has used it yet, and nobody has looked at the lantern in a real game client: whether it's easy to spot by day and by night, and whether collecting feels clear, are still unknown. See [Testing](#testing).
 
 ## What it does
 
@@ -80,7 +80,7 @@ Admins can't open other players' graves. A friend who collects a grave gets the 
 
 ## Files
 
-**Whose grave it is.** With Mayor 0.7.0 or newer installed, a grave shows its owner's name only to players the server's player groups (Mayor's circles and worlds) allow to see each other, the same rule as chat. Without Mayor, or if Mayor can't answer, only the owner sees the name and everyone else sees "Grave".
+**Whose grave it is.** With Posse 0.11.0 or newer installed, a grave shows its owner's name only to players the server's player groups (Posse's circles and worlds) allow to see each other, the same rule as chat. Without Posse, or if Posse can't answer, only the owner sees the name and everyone else sees "Grave".
 
 Each grave is one YAML file in `plugins/LanternGraves/graves/`, named after the grave's id. Items are stored as Paper's own item data in base64. Each item also has its type and amount in plain text, for anyone reading the file. Don't edit these files: the checksum on the last line makes LanternGraves refuse an edited file. A file that won't load is copied to `plugins/LanternGraves/damaged/` and left where it is, and its items can't be collected until someone fixes it by hand.
 

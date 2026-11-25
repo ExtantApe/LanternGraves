@@ -10,8 +10,8 @@ import java.util.logging.Logger;
 
 /**
  * Who may see whose grave it is (owner, 2026-11-16, D231). The owner always sees their name. Everyone else sees it
- * only when the server's player groups allow the two to see each other, asked of Mayor's ReachService. Without Mayor,
- * or if Mayor can't answer, others see "Grave". Fails closed.
+ * only when the server's player groups allow the two to see each other, asked of Posse's ReachService. Without Posse,
+ * or if Posse can't answer, others see "Grave". Fails closed.
  */
 public final class GraveNames {
     /** One question, so the decision can be tested without a server. */
@@ -28,23 +28,23 @@ public final class GraveNames {
         this.log = log;
     }
 
-    /** Looks for Mayor's service again: at start-up, and when plugins change. */
+    /** Looks for Posse's service again: at start-up, and when plugins change. */
     public void connect(Plugin self) {
         rules = null;
-        if (Bukkit.getPluginManager().getPlugin("Mayor") == null) {
-            log.info("Mayor isn't installed, so other players see a grave as just \"Grave\".");
+        if (Bukkit.getPluginManager().getPlugin("Posse") == null) {
+            log.info("Posse isn't installed, so other players see a grave as just \"Grave\".");
             return;
         }
         try {
-            var service = Bukkit.getServicesManager().load(com.extantape.mayor.api.ReachService.class);
+            var service = Bukkit.getServicesManager().load(com.extantape.posse.api.ReachService.class);
             if (service == null) {
-                log.warning("Mayor is installed but offers no ReachService, so other players see a grave as just \"Grave\".");
+                log.warning("Posse is installed but offers no ReachService, so other players see a grave as just \"Grave\".");
                 return;
             }
             rules = service::mayKnow;
-            log.info("Mayor found: a grave shows its owner's name only to players the server's groups allow.");
+            log.info("Posse found: a grave shows its owner's name only to players the server's groups allow.");
         } catch (LinkageError e) {
-            log.warning("This Mayor can't say who may see a grave's name (it needs Mayor 0.7.0 or newer), so other players see \"Grave\".");
+            log.warning("This Posse can't say who may see a grave's name (it needs Posse 0.11.0 or newer), so other players see \"Grave\".");
         }
     }
 
@@ -61,7 +61,7 @@ public final class GraveNames {
         } catch (RuntimeException | LinkageError e) {
             if (!warned) {
                 warned = true;
-                log.warning("Mayor couldn't say who may see a grave's name, so others see \"Grave\": " + e);
+                log.warning("Posse couldn't say who may see a grave's name, so others see \"Grave\": " + e);
             }
             return false;
         }
