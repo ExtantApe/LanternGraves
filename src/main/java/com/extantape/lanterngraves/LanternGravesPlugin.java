@@ -149,11 +149,11 @@ public final class LanternGravesPlugin extends JavaPlugin implements Listener {
      */
     @EventHandler
     public void onPosseChange(org.bukkit.event.server.PluginEnableEvent e) {
-        if (e.getPlugin().getName().equals("Posse") && names != null) { names.connect(this); markers.refreshViewers(); }
+        if (com.extantape.lanterngraves.marker.GraveNames.isProvider(e.getPlugin().getName()) && names != null) { names.connect(this); markers.refreshViewers(); }
     }
 
     @EventHandler
     public void onPosseGone(org.bukkit.event.server.PluginDisableEvent e) {
-        if (e.getPlugin().getName().equals("Posse") && names != null) Bukkit.getScheduler().runTask(this, () -> { names.connect(this); markers.refreshViewers(); });
+        if (com.extantape.lanterngraves.marker.GraveNames.isProvider(e.getPlugin().getName()) && names != null) Bukkit.getScheduler().runTask(this, () -> { names.connect(this); markers.refreshViewers(); });
     }
 }

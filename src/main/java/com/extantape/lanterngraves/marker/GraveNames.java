@@ -28,10 +28,18 @@ public final class GraveNames {
         this.log = log;
     }
 
+    /** The only plugin name whose service is trusted. No older name is recognized (D196, D292, D295). */
+    static final String PROVIDER = "Posse";
+
+    /** Whether a plugin of this name is the one that decides who sees a grave's name. Exact match only. */
+    public static boolean isProvider(String pluginName) {
+        return PROVIDER.equals(pluginName);
+    }
+
     /** Looks for Posse's service again: at start-up, and when plugins change. */
     public void connect(Plugin self) {
         rules = null;
-        if (Bukkit.getPluginManager().getPlugin("Posse") == null) {
+        if (Bukkit.getPluginManager().getPlugin(PROVIDER) == null) {
             log.info("Posse isn't installed, so other players see a grave as just \"Grave\".");
             return;
         }

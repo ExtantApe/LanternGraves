@@ -2,7 +2,7 @@
 
 When a player dies, their items and XP go into a grave marked by a lantern, locked to them, until they come back for it. For Paper 26.1 and up.
 
-**Status:** early, version 0.3.0, for Posse 0.11.0 (formerly Mayor; the Mayor name is no longer recognized). 0.3.0 was checked on 2026-11-25 with Posse's own live suite (103/103 on Paper 26.1.2, 26.2 and 26.3) and this repo's `basic` and `rules` suites; the other suites weren't rerun. Every test below passed with bots on fresh throwaway Paper servers. No real player has used it yet, and nobody has looked at the lantern in a real game client: whether it's easy to spot by day and by night, and whether collecting feels clear, are still unknown. See [Testing](#testing).
+**Status:** early, version 0.3.0, for Posse 0.11.0. 0.3.0 was checked on 2026-11-25 with Posse's own live suite (103/103 on Paper 26.1.2, 26.2 and 26.3) and this repo's `basic` and `rules` suites; the other suites weren't rerun. Every test below passed with bots on fresh throwaway Paper servers. No real player has used it yet, and nobody has looked at the lantern in a real game client: whether it's easy to spot by day and by night, and whether collecting feels clear, are still unknown. See [Testing](#testing).
 
 ## What it does
 
