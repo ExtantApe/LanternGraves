@@ -18,7 +18,14 @@ import java.util.Locale;
 import static com.extantape.lanterngraves.grave.GraveService.tell;
 import static com.extantape.lanterngraves.grave.GraveService.where;
 
-/** /lanterngraves for admins. Nothing here opens or empties a grave. */
+/**
+ * /lanterngraves for admins. Nothing here opens or empties a grave.
+ *
+ * <p>These commands show every grave owner's name, whatever Posse says about who may know whom (owner's decision,
+ * 2026-11-26, K819). An admin has to name a player to find, visit or move their grave, and the whole command,
+ * suggestions included, is closed to anyone without {@code lanterngraves.admin}, which only ops have by default.
+ * Every other place a name could reach another player goes through {@code GraveNames}.
+ */
 public final class AdminCommand {
     private final LanternGravesPlugin plugin;
     private final GraveService graves;

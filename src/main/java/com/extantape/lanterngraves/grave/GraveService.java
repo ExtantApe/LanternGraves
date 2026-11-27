@@ -3,6 +3,7 @@ package com.extantape.lanterngraves.grave;
 import com.extantape.lanterngraves.LanternGravesPlugin;
 import com.extantape.lanterngraves.Settings;
 import com.extantape.lanterngraves.groups.InventoryGroups;
+import com.extantape.lanterngraves.marker.GraveNames;
 import com.extantape.lanterngraves.marker.Markers;
 import com.extantape.lanterngraves.store.GraveStore;
 import net.kyori.adventure.text.Component;
@@ -45,6 +46,7 @@ public final class GraveService {
     private final SafeGround safeGround;
     private Settings settings;
     private Markers markers;
+    private GraveNames names;
 
     private final Map<UUID, Grave> graves = new LinkedHashMap<>();
     /** Graves whose last save or delete failed; retried every second. */
@@ -64,6 +66,36 @@ public final class GraveService {
     }
 
     public void markers(Markers markers) { this.markers = markers; }
+    public void names(GraveNames names) { this.names = names; }
+
+    /**
+     * The owner's name for a message to this viewer, or null if they may not know it: the same answer as the
+     * grave's label (D231, K819). Null too if nothing is there to ask, so every caller fails closed.
+     */
+    public String nameFor(Player viewer, Grave g) {
+        return names == null ? null : names.nameFor(viewer, g);
+    }
+
+    /** Posse's answer to whether this player may share a grave with that one (null if they're offline). */
+    public GraveNames.Share mayShare(Player sender, Player target) {
+        return names == null ? GraveNames.Share.UNKNOWN : names.mayShare(sender, target);
+    }
+
+    /** Whether any of a player's graves already lists this friend, whether or not that access has run out. */
+    public boolean alreadyShared(UUID owner, UUID friend) {
+        return graves.values().stream().anyMatch(g -> g.owner().equals(owner) && g.grants().containsKey(friend));
+    }
+
+    /** The names on a player's graves' access lists: the only names /grave untrust needs to offer. */
+    public List<String> sharedNames(UUID owner) {
+        return graves.values().stream().filter(g -> g.owner().equals(owner))
+                .flatMap(g -> g.grants().values().stream()).map(Grant::name).distinct().sorted().toList();
+    }
+
+    /** Whether this viewer may be told who shared these graves with them. No if nothing is there to ask. */
+    public boolean mayNameAll(Player viewer, Collection<Grave> shared) {
+        return names != null && names.mayNameAll(viewer, shared);
+    }
     public void settings(Settings settings) { this.settings = settings; }
     public Settings settings() { return settings; }
     public InventoryGroups groups() { return groups; }
@@ -320,7 +352,8 @@ public final class GraveService {
         if (!graves.containsKey(g.id())) return false;
         if (!g.mayOpen(c.getUniqueId(), now)) {
             Grant grant = g.grants().get(c.getUniqueId());
-            tell(c, grant != null ? "Your access to " + g.ownerName() + "'s grave has ended." : "This grave belongs to " + g.ownerName() + ".", NamedTextColor.RED);
+            // Whose grave it is goes only to players who'd see the name on its label (K819). Otherwise no name.
+            tell(c, GraveNames.refused(nameFor(c, g), grant != null), NamedTextColor.RED);
             return false;
         }
         if (!g.settled()) {

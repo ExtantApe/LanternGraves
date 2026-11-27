@@ -1,0 +1,5 @@
+name: Posse
+version: '0.11.0-double'
+main: com.extantape.posse.PosseDouble
+api-version: '26.1'
+description: Test servers only. Stands in for Posse in LanternGraves' bot tests (see PosseDouble.java).

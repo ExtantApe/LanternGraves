@@ -35,12 +35,17 @@ export async function run(s) {
   check('two graves for Alder', two.length === 2)
   const g1 = two.find(g => g.pos[0] === 100.5), g2 = two.find(g => g.pos[0] === 120.5)
 
-  // Birch tries everything on grave 1.
+  // Birch tries everything on grave 1. From here on, nothing Birch is sent may name Alder (the deaths above did).
+  const joined = b.chat_log.length
+  const afterJoin = bot => bot.chat_log.slice(joined)
   await at(s, b, 'Birch', 102.5, 100.5)
   await rightClickGrave(b)
-  check('a stranger right-clicking is refused and told whose it is', b.chat_log.some(m => /belongs to Alder/.test(m)) && sameGrave(g1, fileOf(s, g1)))
+  // No Posse on this server, so nobody but the owner learns whose grave it is (K819). names.mjs covers Posse's answers.
+  check('a stranger right-clicking is refused, with no name', b.chat_log.some(m => /^This grave isn't yours\.$/.test(m)) && !afterJoin(b).some(m => /Alder/.test(m)) && sameGrave(g1, fileOf(s, g1)), afterJoin(b).join(' | '))
+  let mark = b.chat_log.length
   b.chat('/grave collect'); await sleep(800)
-  check('a stranger using /grave collect is refused', sameGrave(g1, fileOf(s, g1)) && sameTally(holdingsTally(await holdings(s, 'Birch')), {}).ok)
+  check('a stranger using /grave collect is refused, with no name', b.chat_log.slice(mark).some(m => /^This grave isn't yours\.$/.test(m)) && !b.chat_log.slice(mark).some(m => /Alder/.test(m))
+    && sameGrave(g1, fileOf(s, g1)) && sameTally(holdingsTally(await holdings(s, 'Birch')), {}).ok, b.chat_log.slice(mark).join(' | '))
   const box = markers(b, 'interaction').sort((x, y) => x.position.distanceTo(b.entity.position) - y.position.distanceTo(b.entity.position))[0]
   for (let i = 0; i < 5; i++) { b.attack(box); await sleep(150) }
   await sleep(800)
@@ -51,15 +56,15 @@ export async function run(s) {
   // Access to grave 1 only.
   a.chat('/grave trust Birch 1'); await sleep(800)
   check('the owner is told the friend has access', a.chat_log.some(m => /Birch can collect your grave #1 until you untrust them/.test(m)), a.chat_log.slice(-1)[0])
-  check('the friend is told', b.chat_log.some(m => /Alder let you collect their grave #1/.test(m)), b.chat_log.slice(-1)[0])
+  check('the friend is told, with no name', b.chat_log.some(m => /^Someone let you collect one of their graves until/.test(m)) && !afterJoin(b).some(m => /Alder/.test(m)), b.chat_log.slice(-1)[0])
   await at(s, b, 'Birch', 122.5, 100.5)
   await rightClickGrave(b)
-  check('access to grave 1 doesn\'t open grave 2', sameGrave(g2, fileOf(s, g2)) && b.chat_log.slice(-1)[0]?.includes('belongs to Alder'))
+  check('access to grave 1 doesn\'t open grave 2', sameGrave(g2, fileOf(s, g2)) && b.chat_log.slice(-1)[0] === 'This grave isn\'t yours.', b.chat_log.slice(-1)[0])
 
   // Expiry on grave 2.
   a.chat('/grave trust Birch 2 3s'); await sleep(4500)
   await rightClickGrave(b)
-  check('an expired grant is refused and says so', b.chat_log.some(m => /access to Alder's grave has ended/.test(m)))
+  check('an expired grant is refused and says so, with no name', b.chat_log.some(m => /^Your access to this grave has ended\.$/.test(m)) && !afterJoin(b).some(m => /Alder/.test(m)), b.chat_log.slice(-1)[0])
   check('an expired grant never empties a grave', sameGrave(g2, fileOf(s, g2)))
   // Revoke on grave 2.
   a.chat('/grave trust Birch 2'); await sleep(600)
