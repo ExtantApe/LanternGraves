@@ -15,11 +15,14 @@ export const PORT = Number(process.env.LG_TEST_PORT ?? 25611)
 const ROOT = new URL('../', import.meta.url).pathname
 const LIBS = path.join(ROOT, 'build/libs/')
 const built = existsSync(LIBS) ? readdirSync(LIBS).filter(f => /^LanternGraves-[\d.]+\.jar$/.test(f)) : []
-if (built.length !== 1) throw new Error(`Run ./gradlew build first: expected one LanternGraves jar in build/libs, found ${built.length}`)
-export const JAR = path.join(LIBS, built[0])
+// LG_TEST_JAR runs a suite against another LanternGraves jar, such as the last release, to show a test fails there.
+if (!process.env.LG_TEST_JAR && built.length !== 1) throw new Error(`Run ./gradlew build first: expected one LanternGraves jar in build/libs, found ${built.length}`)
+export const JAR = process.env.LG_TEST_JAR ?? path.join(LIBS, built[0])
 // Paper 26.1.2, 26.2 or 26.3. The bots speak 1.21.11, the newest mineflayer knows, and reach 26.x
 // through ViaVersion and ViaBackwards, which every test server gets.
 export const HOOK = path.join(ROOT, 'build/test-hook/LanternGravesTestHook.jar')
+// A stand-in for Posse, built by ./gradlew posseDoubleJar (src/posseDouble). Test servers only.
+export const POSSE = path.join(ROOT, 'build/posse-double/Posse.jar')
 export const VERSION = process.env.LG_TEST_VERSION ?? '26.3'
 export const JAVA = process.env.LG_TEST_JAVA ?? '/Library/Java/JavaVirtualMachines/openjdk-25.jdk/Contents/Home/bin/java'
 const VIA = ['ViaVersion-5.12.2.jar', 'ViaBackwards-5.12.2.jar']

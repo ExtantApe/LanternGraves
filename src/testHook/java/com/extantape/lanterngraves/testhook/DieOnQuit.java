@@ -7,13 +7,17 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.server.ServerCommandEvent;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
  * Test servers only, never shipped; built into its own jar for the bot tests. It plays other plugins:
  * kills a player tagged die_on_quit as they log out, the way a combat-log plugin does, and on death, for a
  * player tagged lg_keep, keeps their cobblestone with them (like a soulbound plugin), and for lg_add, adds a
- * nether star to the drops (like a head-drop plugin).
+ * nether star to the drops (like a head-drop plugin). From the console, {@code lgtest disable <plugin>} and
+ * {@code lgtest enable <plugin>} stop and start another plugin while the server runs, as an admin's plugin manager
+ * would.
  */
 public final class DieOnQuit extends JavaPlugin implements Listener {
     @Override
@@ -26,6 +30,23 @@ public final class DieOnQuit extends JavaPlugin implements Listener {
         if (e.getPlayer().getScoreboardTags().contains("die_on_quit")) {
             e.getPlayer().removeScoreboardTag("die_on_quit");
             e.getPlayer().setHealth(0);
+        }
+    }
+
+    @EventHandler
+    public void onConsole(ServerCommandEvent e) {
+        String[] words = e.getCommand().trim().split("\\s+");
+        if (!words[0].equalsIgnoreCase("lgtest")) return;
+        e.setCancelled(true);
+        Plugin target = words.length == 3 ? getServer().getPluginManager().getPlugin(words[2]) : null;
+        if (target == null || target == this) {
+            getLogger().warning("lgtest disable|enable <plugin>");
+        } else if (words[1].equalsIgnoreCase("disable")) {
+            getServer().getPluginManager().disablePlugin(target);
+            getLogger().info("lgtest: disabled " + target.getName());
+        } else if (words[1].equalsIgnoreCase("enable")) {
+            getServer().getPluginManager().enablePlugin(target);
+            getLogger().info("lgtest: enabled " + target.getName());
         }
     }
 

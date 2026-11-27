@@ -32,3 +32,21 @@ The hazards results above are from the rerun with those fixes.
 - **Exact crash points:** a test-only system property, `-Dlanterngraves.test.halt=<point>`, halts the JVM at each point where a grave file and the player's save briefly disagree. Without the property the code does nothing.
 - **GriefPrevention** (added 2026-11-08): 16.18.7 on 26.1.2 and 26.2, 16.18.8 on 26.3, each checked against Modrinth's SHA-512. Claims are made by bots with `/claim`. On 26.3 the two block-placing checks (that a claim stops a stranger building, and that the claim owner can build on the spot afterwards) are skipped, because turning the bot's head gets it kicked there.
 - **Not tested:** other land-claim plugins, combat-log plugins, other plugins changing death drops, items on the cursor or in the crafting grid, Folia, real players.
+
+## 2026-11-26: 0.3.1, who is told whose grave it is
+
+Same Paper builds, on port 25743. `names` is new and uses a stand-in for Posse. `rules` runs with no Posse.
+
+| Suite | Jar | 26.1.2 | 26.2 | 26.3 |
+| --- | --- | --- | --- | --- |
+| names | 0.3.0 | 26/38 | 26/38 | 26/38 |
+| names | 0.3.1 | 38/38 | 38/38 | 38/38 |
+| rules | 0.3.0, with the checks updated to expect no name | 24/29 | 24/29 | 24/29 |
+| rules | 0.3.1 | 29/29 | 29/29 | 29/29 |
+| basic | 0.3.1 | 20/20 | 20/20 | 20/20 |
+
+Unit tests: 40/40, up from 31.
+
+Two runs were repeated. On 26.3, `basic` once reported 19/20 because the console's answer to an XP query didn't arrive within the test's 400 ms wait; the rerun passed 20/20. Early versions of `names` lost a teleport right after a respawn on 26.3 and missed a chat line on 26.1.2; the suite now confirms each teleport and waits for the line it expects. Neither was the plugin.
+
+The label timing check was also run on 26.1.2 against a scratch build without the immediate refresh from 96426b1: 36/38, with the labels taking 1007 ms and 1003 ms to change, against 106 ms and 62 ms with it.

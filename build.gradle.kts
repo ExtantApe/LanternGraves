@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "com.extantape"
-version = "0.3.0"
+version = "0.3.1"
 
 java {
     toolchain.languageVersion.set(JavaLanguageVersion.of(25))
@@ -60,4 +60,16 @@ tasks.register<Jar>("hookJar") {
     from(testHook.output)
     archiveFileName.set("LanternGravesTestHook.jar")
     destinationDirectory.set(layout.buildDirectory.dir("test-hook"))
+}
+
+// Another test-only plugin, never shipped: it stands in for Posse, so the bot tests can make Posse allow a name,
+// refuse it, fail or stop (test/names.mjs). Its jar carries the ReachService interface, as Posse's own does.
+val posseDouble by sourceSets.creating {
+    compileClasspath += configurations.compileClasspath.get()
+}
+tasks.register<Jar>("posseDoubleJar") {
+    from(posseDouble.output)
+    from(project(":posse-stub").sourceSets["main"].output)
+    archiveFileName.set("Posse.jar")
+    destinationDirectory.set(layout.buildDirectory.dir("posse-double"))
 }

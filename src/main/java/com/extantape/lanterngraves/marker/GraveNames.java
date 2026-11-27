@@ -12,6 +12,10 @@ import java.util.logging.Logger;
  * Who may see whose grave it is (owner, 2026-11-16, D231). The owner always sees their name. Everyone else sees it
  * only when the server's player groups allow the two to see each other, asked of Posse's ReachService. Without Posse,
  * or if Posse can't answer, others see "Grave". Fails closed.
+ *
+ * <p>The same answer decides every message that could carry the owner's name to another player: the refusal when a
+ * grave isn't theirs, the shared graves in /grave list, and the notice that a grave was shared (K819). Those go
+ * through {@link #nameFor} and the wording methods below, so the label and the chat text can't disagree.
  */
 public final class GraveNames {
     /** One question, so the decision can be tested without a server. */
@@ -58,6 +62,42 @@ public final class GraveNames {
 
     public boolean showName(Player viewer, Grave g) {
         return decide(viewer.getUniqueId(), g.owner(), rules, viewer, g.world());
+    }
+
+    /** The owner's name for a message to this viewer, or null if they may not know it. The label's answer. */
+    public String nameFor(Player viewer, Grave g) {
+        return showName(viewer, g) ? g.ownerName() : null;
+    }
+
+    /**
+     * Whether a viewer may be told who shared these graves with them: only if they may know the owner from every one
+     * of them. No graves, no name.
+     */
+    public boolean mayNameAll(Player viewer, java.util.Collection<Grave> graves) {
+        if (graves.isEmpty()) return false;
+        for (Grave g : graves) if (!showName(viewer, g)) return false;
+        return true;
+    }
+
+    // ---------------------------------------------------------------- wording, with a name or without
+
+    /** Told to a player who can't open a grave. {@code owner} is null when they may not know whose it is. */
+    public static String refused(String owner, boolean accessEnded) {
+        if (owner == null) return accessEnded ? "Your access to this grave has ended." : "This grave isn't yours.";
+        return accessEnded ? "Your access to " + owner + "'s grave has ended." : "This grave belongs to " + owner + ".";
+    }
+
+    /** A line of /grave list for a grave someone shared with the reader. */
+    public static String shared(String owner, int number, String where) {
+        if (owner == null) return "You can collect a grave shared with you at " + where + ".";
+        return "You can collect " + owner + "'s grave #" + number + " at " + where + ".";
+    }
+
+    /** Told to a friend when graves are shared with them. {@code which} is "all" or a grave's number. */
+    public static String trusted(String owner, String which, String time) {
+        boolean all = which.equalsIgnoreCase("all");
+        if (owner == null) return "Someone let you collect " + (all ? "their graves" : "one of their graves") + time + ". /grave list shows where.";
+        return owner + " let you collect " + (all ? "their graves" : "their grave #" + which) + time + ". /grave list shows where.";
     }
 
     /** The whole rule, testable: the owner yes; no rules no; otherwise the rules' answer, and no if they fail. */

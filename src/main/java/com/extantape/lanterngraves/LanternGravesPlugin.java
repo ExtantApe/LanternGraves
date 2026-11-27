@@ -69,6 +69,7 @@ public final class LanternGravesPlugin extends JavaPlugin implements Listener {
         names = new com.extantape.lanterngraves.marker.GraveNames(getLogger());
         markers = new Markers(this, graves, settings, names);
         graves.markers(markers);
+        graves.names(names);
         names.connect(this);
 
         getServer().getPluginManager().registerEvents(new GraveListener(graves, markers, safeGround), this);

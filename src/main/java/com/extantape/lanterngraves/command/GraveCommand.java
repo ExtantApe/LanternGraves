@@ -5,6 +5,7 @@ import com.extantape.lanterngraves.grave.Grant;
 import com.extantape.lanterngraves.grave.Grave;
 import com.extantape.lanterngraves.grave.GraveService;
 import com.extantape.lanterngraves.grave.Xp;
+import com.extantape.lanterngraves.marker.GraveNames;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
@@ -74,7 +75,8 @@ public final class GraveCommand {
         List<Grave> shared = graves.all().stream()
                 .filter(g -> g.settled() && !g.owner().equals(p.getUniqueId()) && g.mayOpen(p.getUniqueId(), now)).toList();
         for (Grave g : shared) {
-            tell(p, "You can collect " + g.ownerName() + "'s grave #" + graves.numberOf(g) + " at " + where(g) + ".", NamedTextColor.AQUA);
+            // Named only for a reader who'd see the name on the grave's label (K819).
+            tell(p, GraveNames.shared(graves.nameFor(p, g), graves.numberOf(g), where(g)), NamedTextColor.AQUA);
         }
     }
 
@@ -157,8 +159,8 @@ public final class GraveCommand {
         tell(p, name + " can collect " + scope + time + ".", NamedTextColor.GREEN);
         Player online = friend.getPlayer();
         if (online != null) {
-            tell(online, p.getName() + " let you collect " + (which.equalsIgnoreCase("all") ? "their graves" : "their grave #" + which) + time
-                    + ". /grave list shows where.", NamedTextColor.AQUA);
+            // The friend learns who shared only if they'd see that name on every one of these graves (K819).
+            tell(online, GraveNames.trusted(graves.mayNameAll(online, targets) ? p.getName() : null, which, time), NamedTextColor.AQUA);
         }
     }
 
