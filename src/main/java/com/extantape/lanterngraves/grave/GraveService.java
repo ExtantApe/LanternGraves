@@ -76,6 +76,22 @@ public final class GraveService {
         return names == null ? null : names.nameFor(viewer, g);
     }
 
+    /** Posse's answer to whether this player may share a grave with that one (null if they're offline). */
+    public GraveNames.Share mayShare(Player sender, Player target) {
+        return names == null ? GraveNames.Share.UNKNOWN : names.mayShare(sender, target);
+    }
+
+    /** Whether any of a player's graves already lists this friend, whether or not that access has run out. */
+    public boolean alreadyShared(UUID owner, UUID friend) {
+        return graves.values().stream().anyMatch(g -> g.owner().equals(owner) && g.grants().containsKey(friend));
+    }
+
+    /** The names on a player's graves' access lists: the only names /grave untrust needs to offer. */
+    public List<String> sharedNames(UUID owner) {
+        return graves.values().stream().filter(g -> g.owner().equals(owner))
+                .flatMap(g -> g.grants().values().stream()).map(Grant::name).distinct().sorted().toList();
+    }
+
     /** Whether this viewer may be told who shared these graves with them. No if nothing is there to ask. */
     public boolean mayNameAll(Player viewer, Collection<Grave> shared) {
         return names != null && names.mayNameAll(viewer, shared);

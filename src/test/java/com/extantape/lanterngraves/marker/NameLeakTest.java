@@ -59,7 +59,7 @@ class NameLeakTest {
     }
 
     private String notice(GraveNames.Rules rules, Player viewer) {
-        return GraveNames.trusted(names(rules).mayNameAll(viewer, List.of(grave)) ? grave.ownerName() : null, "2", " for 30 minutes");
+        return GraveNames.trusted(names(rules).mayNameAll(viewer, List.of(grave)) ? grave.ownerName() : null, "2", "30 minutes");
     }
 
     // ---------------------------------------------------------------- the refusal
@@ -109,8 +109,15 @@ class NameLeakTest {
         for (GraveNames.Rules rules : new GraveNames.Rules[] {null, REFUSE, BROKEN, OLD}) {
             assertEquals("Someone let you collect one of their graves for 30 minutes. /grave list shows where.", notice(rules, stranger));
         }
-        assertEquals("Someone let you collect their graves until you untrust them. /grave list shows where.",
-                GraveNames.trusted(null, "all", " until you untrust them"));
+    }
+
+    @Test
+    void theSharingNoticeReadsFromTheFriendsSide() {
+        // 0.3.0 told the friend "until you untrust them", which is the owner's side of it.
+        assertEquals("Tester let you collect their grave #2 until they stop sharing it. /grave list shows where.", GraveNames.trusted("Tester", "2", null));
+        assertEquals("Tester let you collect their graves until they stop sharing them. /grave list shows where.", GraveNames.trusted("Tester", "all", null));
+        assertEquals("Someone let you collect one of their graves until they stop sharing it. /grave list shows where.", GraveNames.trusted(null, "2", null));
+        assertEquals("Someone let you collect their graves until they stop sharing them. /grave list shows where.", GraveNames.trusted(null, "all", null));
     }
 
     @Test
@@ -126,8 +133,56 @@ class NameLeakTest {
     void noWordingWithoutANameCarriesOne() {
         for (boolean ended : new boolean[] {false, true}) assertFalse(GraveNames.refused(null, ended).contains("null"));
         assertFalse(GraveNames.shared(null, 1, "here").contains("null"));
-        assertFalse(GraveNames.trusted(null, "1", "").contains("null"));
-        assertFalse(GraveNames.trusted(null, "all", "").contains("null"));
+        for (String length : new String[] {null, "2 hours"}) {
+            assertFalse(GraveNames.trusted(null, "1", length).contains("null"));
+            assertFalse(GraveNames.trusted(null, "all", length).contains("null"));
+            assertFalse(GraveNames.trusted("Tester", "1", length).contains("null"));
+        }
+    }
+
+    // ---------------------------------------------------------------- who a grave may be shared with (/grave trust)
+
+    private final Player friend = player(UUID.randomUUID());
+
+    private GraveNames.Share share(boolean posseInstalled, GraveNames.Reach reach, Player target) {
+        GraveNames n = new GraveNames(Logger.getAnonymousLogger());
+        n.reach(posseInstalled, reach);
+        return n.mayShare(stranger, target);
+    }
+
+    @Test
+    void withNoPosseSharingIsOpenAsItAlwaysWas() {
+        assertEquals(GraveNames.Share.OPEN, share(false, null, friend));
+        assertEquals(GraveNames.Share.OPEN, share(false, null, null));
+        assertTrue(GraveNames.shareAllowed(GraveNames.Share.OPEN, false));
+    }
+
+    @Test
+    void posseDecidesWhoAGraveMayBeSharedWith() {
+        assertEquals(GraveNames.Share.YES, share(true, (from, to) -> from == stranger && to == friend, friend));
+        assertEquals(GraveNames.Share.NO, share(true, (from, to) -> false, friend));
+        assertTrue(GraveNames.shareAllowed(GraveNames.Share.YES, false));
+        assertFalse(GraveNames.shareAllowed(GraveNames.Share.NO, false));
+        assertFalse(GraveNames.shareAllowed(GraveNames.Share.NO, true), "a no from Posse is a no, even for someone shared with before");
+    }
+
+    @Test
+    void aPosseThatIsStoppedFailingTooOldOrAskedAboutSomeoneOfflineGivesNoAnswer() {
+        assertEquals(GraveNames.Share.UNKNOWN, share(true, null, friend), "installed, but offering no service");
+        assertEquals(GraveNames.Share.UNKNOWN, share(true, (from, to) -> { throw new IllegalStateException("down"); }, friend));
+        assertEquals(GraveNames.Share.UNKNOWN, share(true, (from, to) -> { throw new NoSuchMethodError("an older Posse"); }, friend));
+        assertEquals(GraveNames.Share.UNKNOWN, share(true, (from, to) -> true, null), "nobody online to ask about");
+    }
+
+    @Test
+    void noAnswerLetsOnlySomeoneAlreadySharedWithThrough() {
+        assertFalse(GraveNames.shareAllowed(GraveNames.Share.UNKNOWN, false));
+        assertTrue(GraveNames.shareAllowed(GraveNames.Share.UNKNOWN, true));
+    }
+
+    @Test
+    void theRefusalToShareNamesNobody() {
+        assertEquals("You can't share a grave with that player.", GraveNames.CANT_SHARE);
     }
 
     // ---------------------------------------------------------------- a tripwire for the next output

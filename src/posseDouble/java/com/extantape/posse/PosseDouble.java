@@ -13,7 +13,9 @@ import java.util.UUID;
 /**
  * Test servers only, never shipped; built into its own jar for the bot tests. It stands in for Posse: it carries
  * Posse's plugin name and offers a ReachService, so LanternGraves asks it who may know whose grave it is. Its
- * answer is simple on purpose. A viewer with the scoreboard tag {@code lg_circle} may know; nobody else may.
+ * answer is simple on purpose. A viewer with the scoreboard tag {@code lg_circle} may know; nobody else may. Two
+ * players who both have the tag {@code lg_reach} may reach each other; no other pair may. The real Posse's "may
+ * know" is stricter than its "may reach", and two tags let a test set them apart.
  *
  * <p>From the console: {@code possedouble throw} makes every answer fail and {@code possedouble answer} puts the
  * answers back. To stop and start it, as if Posse had gone and come back, the test hook plugin takes
@@ -33,6 +35,12 @@ public final class PosseDouble extends JavaPlugin implements ReachService, Liste
     public boolean mayKnow(Player viewer, UUID owner, String world) {
         if (failing) throw new IllegalStateException("the Posse double was told to fail");
         return viewer.getUniqueId().equals(owner) || viewer.getScoreboardTags().contains("lg_circle");
+    }
+
+    @Override
+    public boolean mayReach(Player from, Player to) {
+        if (failing) throw new IllegalStateException("the Posse double was told to fail");
+        return from.equals(to) || (from.getScoreboardTags().contains("lg_reach") && to.getScoreboardTags().contains("lg_reach"));
     }
 
     @EventHandler

@@ -141,8 +141,16 @@ public final class GraveCommand {
             tell(p, "/grave trust <player> [number|all] [time]", NamedTextColor.RED);
             return;
         }
-        OfflinePlayer friend = known(p, args[1]);
-        if (friend == null) return;
+        // Who the sender may share with follows Posse, and a name they may not reach gets the same reply as a name
+        // nobody has, so neither this command nor its suggestions says who is on the server (K819).
+        OfflinePlayer friend = find(args[1]);
+        GraveNames.Share share = graves.mayShare(p, friend == null ? null : friend.getPlayer());
+        if (share == GraveNames.Share.OPEN) {
+            if (friend == null) { tell(p, "No player called " + args[1] + " has been on this server.", NamedTextColor.RED); return; }
+        } else if (friend == null || !GraveNames.shareAllowed(share, graves.alreadyShared(p.getUniqueId(), friend.getUniqueId()))) {
+            tell(p, GraveNames.CANT_SHARE, NamedTextColor.RED);
+            return;
+        }
         String which = "all";
         long until = 0;
         for (int i = 2; i < args.length; i++) {
@@ -160,7 +168,8 @@ public final class GraveCommand {
         Player online = friend.getPlayer();
         if (online != null) {
             // The friend learns who shared only if they'd see that name on every one of these graves (K819).
-            tell(online, GraveNames.trusted(graves.mayNameAll(online, targets) ? p.getName() : null, which, time), NamedTextColor.AQUA);
+            tell(online, GraveNames.trusted(graves.mayNameAll(online, targets) ? p.getName() : null, which,
+                    until == 0 ? null : Durations.describe(until - System.currentTimeMillis())), NamedTextColor.AQUA);
         }
     }
 
@@ -169,13 +178,20 @@ public final class GraveCommand {
             tell(p, "/grave untrust <player> [number|all]", NamedTextColor.RED);
             return;
         }
-        OfflinePlayer friend = known(p, args[1]);
-        if (friend == null) return;
+        // With Posse here, a name nobody has reads exactly like a player who never had access, so this command
+        // can't be used to find out who has been on the server (K819). The sender's graves are checked first for
+        // the same reason, and the name is echoed as typed.
+        boolean open = graves.mayShare(p, null) == GraveNames.Share.OPEN;
+        OfflinePlayer friend = find(args[1]);
+        if (friend == null && open) {
+            tell(p, "No player called " + args[1] + " has been on this server.", NamedTextColor.RED);
+            return;
+        }
         List<Grave> targets = targets(p, args.length >= 3 ? args[2] : "all");
         if (targets == null) return;
         int n = 0;
-        for (Grave g : targets) if (graves.revoke(g, friend.getUniqueId())) n++;
-        String name = friend.getName() == null ? args[1] : friend.getName();
+        if (friend != null) for (Grave g : targets) if (graves.revoke(g, friend.getUniqueId())) n++;
+        String name = n == 0 && !open || friend == null || friend.getName() == null ? args[1] : friend.getName();
         tell(p, n == 0 ? name + " didn't have access." : name + " can no longer collect " + n + " grave" + (n == 1 ? "" : "s") + ".", NamedTextColor.GREEN);
     }
 
@@ -201,11 +217,27 @@ public final class GraveCommand {
         return null;
     }
 
-    private static OfflinePlayer known(CommandSender to, String name) {
+    /** The player of that name, online or seen before, or null. Says nothing: the caller chooses the reply. */
+    private static OfflinePlayer find(String name) {
         OfflinePlayer p = Bukkit.getPlayerExact(name);
-        if (p == null) p = Bukkit.getOfflinePlayerIfCached(name);
-        if (p == null) tell(to, "No player called " + name + " has been on this server.", NamedTextColor.RED);
-        return p;
+        return p != null ? p : Bukkit.getOfflinePlayerIfCached(name);
+    }
+
+    /**
+     * Names to offer for /grave trust: with no Posse, everyone online, as before; with Posse, only players it says
+     * the sender may reach, and nobody when it gives no answer.
+     */
+    private List<String> shareable(Player p) {
+        return Bukkit.getOnlinePlayers().stream().filter(o -> !o.equals(p)).filter(o -> {
+            GraveNames.Share s = graves.mayShare(p, o);
+            return s == GraveNames.Share.OPEN || s == GraveNames.Share.YES;
+        }).map(Player::getName).toList();
+    }
+
+    /** Names to offer for /grave untrust: with Posse, only the players already on the sender's graves. */
+    private List<String> unshareable(Player p) {
+        if (graves.mayShare(p, null) != GraveNames.Share.OPEN) return graves.sharedNames(p.getUniqueId());
+        return Bukkit.getOnlinePlayers().stream().map(Player::getName).filter(n -> !n.equals(p.getName())).toList();
     }
 
     /** Suggestions for the word being typed, given the words so far. */
@@ -216,8 +248,8 @@ public final class GraveCommand {
         List<String> out = switch (args.length) {
             case 1 -> List.of("list", "collect", "trust", "untrust");
             case 2 -> args[0].equalsIgnoreCase("collect") ? numbers
-                    : args[0].equalsIgnoreCase("trust") || args[0].equalsIgnoreCase("untrust")
-                    ? Bukkit.getOnlinePlayers().stream().map(Player::getName).filter(n -> !n.equals(p.getName())).toList() : List.of();
+                    : args[0].equalsIgnoreCase("trust") ? shareable(p)
+                    : args[0].equalsIgnoreCase("untrust") ? unshareable(p) : List.of();
             case 3 -> {
                 List<String> l = new ArrayList<>(numbers);
                 l.add("all");

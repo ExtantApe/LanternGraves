@@ -9,7 +9,12 @@
 // the label with this jar; this suite checks that LanternGraves follows whatever answer it's given, and fails closed.
 // With no Posse installed at all, rules.mjs checks the same refusals.
 //
-// Made-up players: Alder owns the graves, Birch shares a circle with Alder, Cedar is a stranger.
+// Sharing follows Posse too: /grave trust offers and accepts only players Posse says the sender may reach, and
+// answers a name it won't accept the same way as a name nobody has. In the stand-in, two players who both carry
+// the tag lg_reach may reach each other.
+//
+// Made-up players: Alder owns the graves, Birch shares a circle with Alder, Cedar is a stranger Alder can reach
+// (so a grave can be shared with them), and Daisy is a stranger nobody can reach.
 import { Server, newServer, bot, sleep, check, summary, holdings, graveFiles, holdingsTally, graveTally, sameTally, rightClickGrave, markers, respawned, loaded, POSSE, HOOK } from './harness.mjs'
 import { kit, calm, loose } from './basic.mjs'
 
@@ -50,6 +55,9 @@ const named = lines => lines.some(m => /Alder/.test(m))
 const said = (lines, re) => lines.some(m => re.test(m))
 const show = lines => lines.join(' | ').slice(0, 200)
 const NOT_YOURS = /^This grave isn't yours\.$/, BELONGS = /^This grave belongs to Alder\.$/
+const CANT_SHARE = /^You can't share a grave with that player\.$/
+/** What the server suggests for the word being typed. */
+const suggestions = async (b, typed) => (await b.tabComplete(typed, true, false, 3000).catch(() => [])).map(m => String(m.match ?? m))
 const ENDED = /^Your access to this grave has ended\.$/, ENDED_NAMED = /^Your access to Alder's grave has ended\.$/
 
 /** The words on the label the bot can see nearest to it: every text display within 3.5 blocks, as sent to it. */
@@ -83,8 +91,9 @@ export async function run(s) {
   const a = await bot('Alder')
   const b = await bot('Birch')
   const c = await bot('Cedar')
+  const d = await bot('Daisy')
   await calm(s)
-  await s.run('tag Birch add lg_circle')
+  await s.run('tag Birch add lg_circle', 'tag Alder add lg_reach', 'tag Birch add lg_reach', 'tag Cedar add lg_reach')
 
   await at(s, a, 'Alder', 100.5, 100.5)
   await kit(s, 'Alder')
@@ -149,6 +158,24 @@ export async function run(s) {
   got = await during(b, () => rightClickGrave(b), 900, /access/)
   check('when that access runs out, the refusal names the owner', said(got, ENDED_NAMED) && sameGrave(g2, fileOf(s, g2)), show(got))
 
+  // ------------------------------------------------------------ who a grave can be shared with
+  console.log('\n# Who a grave can be shared with')
+  let offered = await suggestions(a, '/grave trust ')
+  check('a sender Posse allows is offered the players they can reach, and nobody else', offered.includes('Birch') && offered.includes('Cedar') && !offered.includes('Daisy'), offered.join(', '))
+  let quiet = d.chat_log.length
+  got = await during(a, () => a.chat('/grave trust Daisy 2'), 600, /share|collect/)
+  const refusedLine = got.slice(-1)[0]
+  check('sharing with a player they can\'t reach is refused in one plain line', got.length === 1 && CANT_SHARE.test(refusedLine)
+    && !/Daisy/.test(fileOf(s, g2).text) && !d.chat_log.slice(quiet).some(m => /collect/.test(m)), show(got))
+  got = await during(a, () => a.chat('/grave trust Nobody123 2'), 600, /share|player/)
+  check('and a name nobody has gets the very same line', got.length === 1 && got[0] === refusedLine, show(got))
+  offered = [...await suggestions(d, '/grave trust '), ...await suggestions(d, '/grave untrust ')]
+  check('a sender Posse refuses is offered nobody', offered.length === 0, offered.join(', '))
+  got = [...await during(d, () => d.chat('/grave trust Alder'), 600, /share|grave/), ...await during(d, () => d.chat('/grave trust Nobody123'), 600, /share|player/)]
+  check('and gets that same line for a real player and for a name nobody has', got.length === 2 && got.every(m => CANT_SHARE.test(m)), show(got))
+  got = [...await during(d, () => d.chat('/grave untrust Alder'), 600, /access|graves/), ...await during(d, () => d.chat('/grave untrust Nobody123'), 600, /access|player|graves/)]
+  check('and /grave untrust doesn\'t tell a real player from a made-up name either', got.length === 2 && got[0].replace('Alder', 'X') === got[1].replace('Nobody123', 'X'), show(got))
+
   // ------------------------------------------------------------ Posse not answering
   console.log('\n# Posse fails')
   await s.run('possedouble throw')
@@ -163,6 +190,11 @@ export async function run(s) {
   check('and a grave shared with them is announced with no name', said(got, /^Someone let you collect one of their graves for /) && !named(got), show(got))
   got = await during(b, () => b.chat('/grave list'), 300, /You can collect/)
   check('and listed with no name', said(got, SHARED) && !named(got), show(got))
+  // That worked only because Birch was already on that grave's list. Nobody new can be added while Posse fails.
+  offered = await suggestions(a, '/grave trust ')
+  check('while Posse fails, nobody is offered for sharing', offered.length === 0, offered.join(', '))
+  got = await during(a, () => a.chat('/grave trust Daisy 2'), 600, /share|collect/)
+  check('and nobody new can be shared with', got.length === 1 && CANT_SHARE.test(got[0]) && !/Daisy/.test(fileOf(s, g2).text), show(got))
   a.chat('/grave untrust Birch 2'); await sleep(600)
   await at(s, a, 'Alder', 121.5, 100.5)
   got = await during(a, () => rightClickGrave(a), 900, /Collected/)
@@ -190,6 +222,10 @@ export async function run(s) {
   check('with Posse stopped, a circle member is refused with no name', said(got, NOT_YOURS) && !named(got) && sameGrave(g1, fileOf(s, g1)), show(got))
   got = await during(b, () => b.chat('/grave collect'), 900, NOT_YOURS)
   check('and the same from /grave collect', said(got, NOT_YOURS) && !named(got), show(got))
+  offered = await suggestions(a, '/grave trust ')
+  check('with Posse stopped, nobody is offered for sharing', offered.length === 0, offered.join(', '))
+  got = await during(a, () => a.chat('/grave trust Cedar 1'), 600, /share|collect/)
+  check('and a player the owner could reach before can\'t be shared with now', got.length === 1 && CANT_SHARE.test(got[0]) && !/Cedar/.test(fileOf(s, g1).text), show(got))
   check('the owner\'s label has their name while Posse is stopped', await (async () => { await at(s, a, 'Alder', 101.5, 100.5); await sleep(1500); return seesName(a) })(), labels(a) + ' labels')
   await at(s, a, 'Alder', 110.5, 110.5)
   await sleep(1200)
@@ -202,6 +238,8 @@ export async function run(s) {
   check('and the circle member is told whose it is again', said(got, BELONGS), show(got))
   got = await during(c, () => rightClickGrave(c), 900, NOT_YOURS)
   check('and the stranger still isn\'t', said(got, NOT_YOURS) && !named(got), show(got))
+  offered = await suggestions(a, '/grave trust ')
+  check('and the owner is offered the players they can reach again', offered.includes('Birch') && offered.includes('Cedar') && !offered.includes('Daisy'), offered.join(', '))
 
   // ------------------------------------------------------------ the owner
   console.log('\n# The owner')
@@ -211,7 +249,7 @@ export async function run(s) {
   got = await during(a, () => rightClickGrave(a), 900, /Collected/)
   check('the owner collects their grave in full with Posse stopped', sameTally(kit1, holdingsTally(await holdings(s, 'Alder'))).ok && !fileOf(s, g1), show(got))
   check('nothing dropped', (await loose(s)).items === 0)
-  a.quit(); b.quit(); c.quit()
+  a.quit(); b.quit(); c.quit(); d.quit()
   await sleep(500)
 }
 

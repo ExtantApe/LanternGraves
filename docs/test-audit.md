@@ -13,7 +13,10 @@ Bug reported against 0.3.0: a refused `/grave collect` or right-click answered "
 | Shared graves in `/grave list` | to anyone the grave was shared with | Posse's answer; otherwise "a grave shared with you" |
 | The message that a grave was shared | to the player it was shared with | Posse's answer for every grave shared; otherwise "Someone" |
 | The label | Posse's answer already | unchanged |
-| `/lanterngraves list`, `move` and their suggestions | admins only | unchanged, and now tested for a player who isn't an admin |
+| `/lanterngraves list`, `move` and their suggestions | admins only | unchanged (owner's decision, 2026-11-26: admins keep seeing names), and now tested for a player who isn't an admin |
+| `/grave trust` suggestions | every online player | with Posse, only players the sender can reach; nobody if Posse gives no answer |
+| `/grave trust` with a typed name | said whether that name had been on the server | with Posse, one line for every name it won't accept: "You can't share a grave with that player." |
+| `/grave untrust` suggestions and replies | every online player; said whether a name had been on the server | with Posse, only players already on the sender's graves; a made-up name reads like a player who never had access |
 | The grave file and the server log | not shown to players | unchanged |
 | The death message, the action bar hint, the compass and BlueMapMini's death marker | the owner only | unchanged |
 
@@ -26,20 +29,23 @@ Bug reported against 0.3.0: a refused `/grave collect` or right-click answered "
 | One grave Posse refuses keeps the name out of a message about several | **new** unit `oneGravePosseRefusesKeepsTheNameOutOfANoticeAboutSeveral` |
 | A player who isn't an admin gets no names from `/lanterngraves` | **new** bots `names` (the command and its suggestions) |
 | **When Posse stops or starts, labels follow at once, and say "Grave" while it's gone** (commit 96426b1, 2026-11-21, which changed no test) | **new** bots `names` ("Posse stops, then starts again"): the change is timed from the moment of a one-second refresh, so a label that waited for the next refresh takes about a second and fails |
+| **`/grave trust` offers and accepts only players Posse says the sender can reach; without Posse it works as before** | **new** unit `posseDecidesWhoAGraveMayBeSharedWith`, `withNoPosseSharingIsOpenAsItAlwaysWas`; bots `names` ("Who a grave can be shared with": an allowed sender and a refused one), `rules` (no Posse) |
+| **A name it won't accept reads exactly like a name nobody has** | **new** unit `theRefusalToShareNamesNobody`; bots `names` (the same line for a real player and a made-up one, for `trust` and `untrust`) |
+| **Posse failing, stopped, too old, or asked about someone offline: nobody new can be added (fail closed), and someone already on a grave's list still can** | **new** unit `aPosseThatIsStoppedFailingTooOldOrAskedAboutSomeoneOfflineGivesNoAnswer`, `noAnswerLetsOnlySomeoneAlreadySharedWithThrough`; bots `names` (while Posse fails and after it stops) |
+| The sharing message reads from the friend's side | **new** unit `theSharingNoticeReadsFromTheFriendsSide` |
 | New code that reads an owner's name gets looked at | **new** unit `everyReadOfAnOwnersNameIsAccountedFor`: it lists each file that reads the name and why that's safe, and fails when the list changes |
 
 **Gaps added this audit:** every row above marked new. The label one came from the 14-day sweep: 96426b1 made a Posse stop or start re-render labels at once, with no test. It's now timed. With those two refresh calls taken out of a scratch build, the two timed checks failed on Paper 26.1.2 (1007 ms and 1003 ms, against 106 ms and 62 ms with them in; the limit is 600 ms).
 
-**Shown to fail on 0.3.0:** the `names` suite scored 26/38 and the updated `rules` suite 24/29 on the 0.3.0 jar, on each of Paper 26.1.2, 26.2 and 26.3. The unit tests call methods 0.3.0 doesn't have, so there they don't compile.
+**Shown to fail on 0.3.0:** the `names` suite scored 25/49 and the updated `rules` suite 24/29 on the 0.3.0 jar, on each of Paper 26.1.2, 26.2 and 26.3. The unit tests call methods 0.3.0 doesn't have, so there they don't compile.
 
-**Mocked:** Posse, in the `names` suite, is a test-only plugin with Posse's name (`src/posseDouble`). A player tagged `lg_circle` may know; nobody else may; the console can make it fail, and the test hook plugin stops and starts it.
+**Mocked:** Posse, in the `names` suite, is a test-only plugin with Posse's name (`src/posseDouble`). A player tagged `lg_circle` may know; nobody else may; two players both tagged `lg_reach` can reach each other; the console can make it fail, and the test hook plugin stops and starts it.
 
 **Skipped, with reasons:**
 - The real Posse with these messages. They ask the same `GraveNames` question as the label, which Posse's own suite checks against the real plugin.
 - The timed label check with the refresh calls removed was run on 26.1.2 only. It's the same code on each version, and the check itself passes on all three.
 - `extras`, `hazards`, `crash`, `mvinv` and `griefprevention` weren't rerun: the change is in wording and in who is asked, and none of them cover either.
-
-**Left for the lead to decide:** `/grave trust` suggests every online player's name, and answers differently for a name that has and hasn't been on the server. Neither is a grave owner's name, so they're outside this fix.
+- Sharing with an offline player while Posse is installed has no bot check: Posse can only be asked about online players, so it's the no-answer rule, which the unit tests cover.
 
 ## 2026-11-10: Rewild (0.1.2)
 
