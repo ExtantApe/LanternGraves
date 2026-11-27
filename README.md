@@ -6,7 +6,7 @@ When a player dies, their items and XP go into a grave marked by a lantern, lock
 
 ## What it does
 
-- **Nothing drops.** On death, everything that would have dropped goes into a grave: inventory, armour and off hand, anything else in the drops, and items left on the cursor or in the input slots of a screen that was open, such as the crafting grid, a crafting table, an anvil or a smithing table. So does all of the player's XP. 0.1.0 dropped those cursor and screen items on the ground; 0.1.1 fixes that. Of the screens, the crafting grid and the anvil are bot-tested; the others use the same code.
+- **Nothing drops.** On death, everything that would have dropped goes into a grave: inventory, armor and off hand, anything else in the drops, and items left on the cursor or in the input slots of a screen that was open, such as the crafting grid, a crafting table, an anvil or a smithing table. So does all of the player's XP. 0.1.0 dropped those cursor and screen items on the ground; 0.1.1 fixes that. Of the screens, the crafting grid and the anvil are bot-tested; the others use the same code.
 - **Everything comes back exactly.** Enchantments, names, damage, shulker box and bundle contents, trims and maps are all kept. Right-click the lantern and each item goes back to the slot it came from if that slot is free, or to a free slot if not. Whatever doesn't fit stays in the grave. Nothing is ever dropped on the ground.
 - **Graves never disappear, and only the owner can open one.** Other players can't open, collect, break or drain it with hoppers. The owner can let a friend collect a grave with `/grave trust`.
 - **Safe from the world.** The items aren't in the world at all. They're in a file in the plugin folder, so explosions, lava, fire, water, pistons, sand, `/kill` and WorldEdit can't reach them. If the lantern is damaged or removed, it comes back within a second.
@@ -56,7 +56,7 @@ Admins can't open other players' graves. A friend who collects a grave gets the 
 
 ## Permissions
 
-| Permission | Default | |
+| Permission | Default | What it allows |
 | --- | --- | --- |
 | `lanterngraves.use` | everyone | `/grave`. Graves are made and collected whatever this is set to. |
 | `lanterngraves.share` | everyone | `/grave trust`. Deny it for a group, such as children, whose graves only they should open. |
@@ -66,7 +66,7 @@ Admins can't open other players' graves. A friend who collects a grave gets the 
 
 `plugins/LanternGraves/config.yml`:
 
-| Setting | Default | |
+| Setting | Default | What it does |
 | --- | --- | --- |
 | `marker.light` | `true` | The invisible light block at the lantern. Only placed in empty air, and removed when the grave is emptied. `false` changes no blocks at all. |
 | `marker.light-level` | `12` | 1 to 15. |
